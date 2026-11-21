@@ -23,10 +23,24 @@ describe('기기 시계 차이 보정', () => {
   it('시계가 전혀 다른 두 기기도 보정하면 같은 항목·같은 위치를 가리킨다', () => {
     const dev = new DeviceAuthority('d-1');
     const t0 = Date.UTC(2026, 10, 21, 0, 0, 0);
-    dev.submit({ commandId: 's', type: 'schedule.replace', baseScheduleVersion: 0, items: [{ id: 'a', title: 'A', sceneId: 'grid', durationSec: 10 }, { id: 'b', title: 'B', sceneId: 'waves', durationSec: 10 }] }, t0, 'op');
+    dev.submit(
+      {
+        commandId: 's',
+        type: 'schedule.replace',
+        baseScheduleVersion: 0,
+        items: [
+          { id: 'a', title: 'A', sceneId: 'grid', durationSec: 10 },
+          { id: 'b', title: 'B', sceneId: 'waves', durationSec: 10 },
+        ],
+      },
+      t0,
+      'op',
+    );
     const serverNow = t0 + 13_000;
-    const skewA = +90_000, skewB = -45_000; // 한 대는 90초 빠르고 한 대는 45초 느림
-    const a = new ClockSync(), b = new ClockSync();
+    const skewA = +90_000,
+      skewB = -45_000; // 한 대는 90초 빠르고 한 대는 45초 느림
+    const a = new ClockSync(),
+      b = new ClockSync();
     a.addSample(serverNow - 20 + skewA, serverNow, serverNow + 20 + skewA);
     b.addSample(serverNow - 30 + skewB, serverNow, serverNow + 30 + skewB);
     const npA = nowPlaying(dev.state, a.serverNow(serverNow + skewA))!;
@@ -37,5 +51,18 @@ describe('기기 시계 차이 보정', () => {
     expect(npB.offsetInItemMs).toBe(3000);
     // 보정하지 않으면 한 대는 엉뚱한 항목을 가리킨다
     expect(nowPlaying(dev.state, serverNow + skewA)!.item.id).not.toBe(npB.item.id);
+  });
+
+  it('기기 시계가 갑자기 바뀌면 옛 표본을 버리고 새 표본을 따른다', () => {
+    const c = new ClockSync();
+    c.addSample(1000, 1000, 1000); // 시계가 서버와 같을 때(왕복 0)
+    c.addSample(2000, 2000, 2000);
+    expect(c.offsetMs).toBe(0);
+    // 시계가 45초 빨라진 뒤의 표본(왕복 40ms)
+    c.addSample(48_000 - 20, 3000, 48_000 + 20);
+    expect(c.offsetMs).toBe(-45_000);
+    // 옛 표본보다 왕복이 길어도 계속 새 표본을 쓴다(옛 표본은 이미 버려졌다)
+    c.addSample(50_000 - 60, 5000, 50_000 + 60);
+    expect(c.offsetMs).toBe(-45_000);
   });
 });

@@ -5,10 +5,25 @@ export const PLAYER = process.env.PLAYER_URL ?? 'http://127.0.0.1:59682';
 export const API = process.env.API_URL ?? 'http://127.0.0.1:59680';
 
 export interface PlayerStatus {
-  deviceId: string; connection: string; version: number | null; itemId: string | null; itemTitle: string | null;
-  offsetInItemMs: number | null; itemDurationMs: number | null; paused: boolean | null; volume: number | null; override: string | null;
-  queued: number; lastAckSeq: number; sent: number; flushFailures: number; duplicatesReported: number; clockOffsetMs: number;
-  snapshots: number; reconnects: number; scenesCached: string[];
+  deviceId: string;
+  connection: string;
+  version: number | null;
+  itemId: string | null;
+  itemTitle: string | null;
+  offsetInItemMs: number | null;
+  itemDurationMs: number | null;
+  paused: boolean | null;
+  volume: number | null;
+  override: string | null;
+  queued: number;
+  lastAckSeq: number;
+  sent: number;
+  flushFailures: number;
+  duplicatesReported: number;
+  clockOffsetMs: number;
+  snapshots: number;
+  reconnects: number;
+  scenesCached: string[];
 }
 
 export async function loginApi(request: APIRequestContext, user = 'operator', password = 'operator-demo'): Promise<string> {
@@ -28,7 +43,13 @@ export async function command(request: APIRequestContext, token: string, deviceI
 
 export async function snapshot(request: APIRequestContext, token: string, deviceId: string) {
   const r = await request.get(`${API}/api/devices/${deviceId}/snapshot`, { headers: { Authorization: `Bearer ${token}` } });
-  return (await r.json()).state as { version: number; scheduleVersion: number; volume: number; playback: { paused: boolean }; schedule: { items: { id: string; title: string }[] } };
+  return (await r.json()).state as {
+    version: number;
+    scheduleVersion: number;
+    volume: number;
+    playback: { paused: boolean };
+    schedule: { items: { id: string; title: string }[] };
+  };
 }
 
 /** 같은 편성표를 화면에 넣는다(현재 버전을 읽어 그 위에 교체) */
@@ -40,16 +61,31 @@ export async function setSchedule(request: APIRequestContext, token: string, dev
 
 export const status = (page: Page): Promise<PlayerStatus> => page.evaluate(() => (window as unknown as { __player?: () => unknown }).__player?.() as never);
 
-export async function openPlayer(browser: Browser, deviceId: string, opts: { skew?: number; flush?: number; base?: string } = {}): Promise<{ context: BrowserContext; page: Page }> {
+export async function openPlayer(
+  browser: Browser,
+  deviceId: string,
+  opts: { skew?: number; flush?: number; base?: string } = {},
+): Promise<{ context: BrowserContext; page: Page }> {
   const context = await browser.newContext();
   // 실제 기기는 일련번호를 저장소에 남겨 두고 이어서 쓴다. 시험에서는 새 브라우저 컨텍스트를 쓰므로 서버가 아는 마지막 번호 다음부터 시작하게 심어 둔다.
   const op = await loginApi(context.request);
   const rows = (await (await context.request.get(`${API}/api/devices/${deviceId}/play-records`, { headers: { Authorization: `Bearer ${op}` } })).json()) as { seq: number }[];
   const nextSeq = (rows[0]?.seq ?? 0) + 1;
-  await context.addInitScript(({ key, seq }) => { try { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ rows: [], nextSeq: seq })); } catch { /* 무시 */ } }, { key: `sl_queue_${deviceId}`, seq: nextSeq });
+  await context.addInitScript(
+    ({ key, seq }) => {
+      try {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ rows: [], nextSeq: seq }));
+      } catch {
+        /* 무시 */
+      }
+    },
+    { key: `sl_queue_${deviceId}`, seq: nextSeq },
+  );
   const page = await context.newPage();
   const errors: string[] = [];
-  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR|EventSource/i.test(m.text())) errors.push(m.text()); });
+  page.on('console', (m) => {
+    if (m.type() === 'error' && !/Failed to load resource|net::ERR|EventSource/i.test(m.text())) errors.push(m.text());
+  });
   page.on('pageerror', (e) => errors.push(String(e)));
   (page as unknown as { __errors: string[] }).__errors = errors;
   const q = new URLSearchParams({ device: deviceId, flush: String(opts.flush ?? 2000), debug: '1' });

@@ -18,7 +18,11 @@ export function browserTransport(deviceId: string, key: string, store: Pick<Stor
         const r = await fetch(`/api/devices/${deviceId}/snapshot`, { headers: { 'X-Device-Key': key }, cache: 'no-store' });
         if (!r.ok) throw new Error(`snapshot ${r.status}`);
         const snap = (await r.json()) as Snapshot;
-        try { store.setItem(cacheKey, JSON.stringify({ state: snap.state, offsetMs: snap.serverTimeMs - (t0 + now()) / 2 } satisfies Cached)); } catch { /* 저장 실패는 무시 */ }
+        try {
+          store.setItem(cacheKey, JSON.stringify({ state: snap.state, offsetMs: snap.serverTimeMs - (t0 + now()) / 2 } satisfies Cached));
+        } catch {
+          /* 저장 실패는 무시 */
+        }
         return snap;
       } catch (e) {
         const raw = store.getItem(cacheKey);
@@ -32,7 +36,11 @@ export function browserTransport(deviceId: string, key: string, store: Pick<Stor
 }
 
 export async function postRecords(deviceId: string, key: string, batch: PlayRecordBatch): Promise<PlayRecordResult> {
-  const r = await fetch(`/api/devices/${deviceId}/play-records`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device-Key': key }, body: JSON.stringify(batch) });
+  const r = await fetch(`/api/devices/${deviceId}/play-records`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Device-Key': key },
+    body: JSON.stringify(batch),
+  });
   if (!r.ok) throw new Error(`records ${r.status}`);
   return (await r.json()) as PlayRecordResult;
 }

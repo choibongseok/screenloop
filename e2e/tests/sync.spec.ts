@@ -42,7 +42,8 @@ test('기기 시계가 97초 어긋난 플레이어 두 대가 같은 순간 같
   const a = await openPlayer(browser, 'd-001');
   const b = await openPlayer(browser, 'd-002', { skew: 97_000 }); // 12초 한 바퀴에서 97초 = 1초 어긋남(보정이 없으면 항목이 달라진다)
   await expect.poll(async () => Math.abs((await status(b.page)).clockOffsetMs + 97_000)).toBeLessThan(100);
-  let compared = 0, mismatches = 0;
+  let compared = 0,
+    mismatches = 0;
   for (let i = 0; i < 30; i++) {
     const [sa, sb] = await Promise.all([status(a.page), status(b.page)]);
     compared++;
@@ -103,7 +104,7 @@ test('휴대폰 리모컨(390px)이 운영 콘솔·플레이어와 같은 상태
   await expect(phone.getByTestId('remote-now')).toHaveText('오늘의 메뉴');
   await expect.poll(async () => (await status(player.page)).itemId).toBe('menu');
   await phone.getByRole('button', { name: '음량 +' }).click();
-  await expect.poll(async () => (await status(player.page)).volume).toBe(((await snapshot(request, tok, 'd-001')).volume));
+  await expect.poll(async () => (await status(player.page)).volume).toBe((await snapshot(request, tok, 'd-001')).volume);
   await phone.getByRole('button', { name: '일시정지' }).click();
   await expect.poll(async () => (await status(player.page)).paused).toBe(true);
   await expect(phone.getByRole('button', { name: '재개' })).toBeVisible();

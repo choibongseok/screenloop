@@ -47,7 +47,7 @@ test('편성표 편집: 끌어서·버튼으로 순서를 바꾸고 시간대를
   // 재생 시간을 4초로 줄이고, '환영 인사'(지금 시각 ±60분)와 '이벤트 안내'(2~3시간 뒤)에 시간대를 준다
   const now = new Date(Date.now() + 9 * 3600_000);
   const m = now.getUTCHours() * 60 + now.getUTCMinutes();
-  const hhmm = (x: number) => `${String(Math.floor(((x % 1440) + 1440) % 1440 / 60)).padStart(2, '0')}:${String((((x % 1440) + 1440) % 1440) % 60).padStart(2, '0')}`;
+  const hhmm = (x: number) => `${String(Math.floor((((x % 1440) + 1440) % 1440) / 60)).padStart(2, '0')}:${String((((x % 1440) + 1440) % 1440) % 60).padStart(2, '0')}`;
   const rows = await titles(web.page);
   for (let i = 0; i < rows.length; i++) await web.page.getByTestId(`item-${i}`).getByRole('textbox', { name: '재생 시간(초)', exact: true }).fill('4');
   const idx = (t: string) => rows.indexOf(t);

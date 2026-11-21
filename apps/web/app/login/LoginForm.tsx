@@ -14,9 +14,17 @@ export function LoginForm() {
         <label htmlFor="password">비밀번호</label>
         <input id="password" name="password" type="password" autoComplete="current-password" required aria-invalid={!!state.error} style={{ width: '100%' }} />
       </div>
-      {state.error && <p className="err" role="alert">{state.error}</p>}
-      <button className="btn primary" type="submit" disabled={pending}>{pending ? '확인 중…' : '로그인'}</button>
-      <p className="hint">데모 계정: 운영자 <code>operator</code> / <code>operator-demo</code>, 보기 전용 <code>viewer</code> / <code>viewer-demo</code></p>
+      {state.error && (
+        <p className="err" role="alert">
+          {state.error}
+        </p>
+      )}
+      <button className="btn primary" type="submit" disabled={pending}>
+        {pending ? '확인 중…' : '로그인'}
+      </button>
+      <p className="hint">
+        데모 계정: 운영자 <code>operator</code> / <code>operator-demo</code>, 보기 전용 <code>viewer</code> / <code>viewer-demo</code>
+      </p>
     </form>
   );
 }

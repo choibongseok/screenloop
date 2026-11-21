@@ -33,14 +33,28 @@ export class RecordLedger {
   private readonly ack = new Map<string, number>();
 
   ingest(deviceId: string, clockOffsetMs: number, records: PlayRecordInput[], receivedAtMs: number): PlayRecordResult {
-    let accepted = 0, duplicates = 0, quarantined = 0;
+    let accepted = 0,
+      duplicates = 0,
+      quarantined = 0;
     for (const r of records) {
       const key = `${deviceId}#${r.seq}`;
-      if (this.keys.has(key)) { duplicates++; continue; }
+      if (this.keys.has(key)) {
+        duplicates++;
+        continue;
+      }
       this.keys.add(key);
       const c = classifyRecord(r, clockOffsetMs, receivedAtMs);
-      this.rows.push({ ...r, deviceId, status: c.status, reason: c.reason, receivedAtMs, serverStartedAtMs: r.startedAtMs + clockOffsetMs, serverEndedAtMs: r.endedAtMs + clockOffsetMs });
-      if (c.status === 'accepted') accepted++; else quarantined++;
+      this.rows.push({
+        ...r,
+        deviceId,
+        status: c.status,
+        reason: c.reason,
+        receivedAtMs,
+        serverStartedAtMs: r.startedAtMs + clockOffsetMs,
+        serverEndedAtMs: r.endedAtMs + clockOffsetMs,
+      });
+      if (c.status === 'accepted') accepted++;
+      else quarantined++;
       this.ack.set(deviceId, Math.max(this.ack.get(deviceId) ?? 0, r.seq));
     }
     return { accepted, duplicates, quarantined, ackSeq: this.ack.get(deviceId) ?? 0 };
@@ -60,7 +74,10 @@ export class RecordQueue {
   private rows: PlayRecordInput[] = [];
   private nextSeq = 1;
 
-  constructor(private readonly store: KeyValueStore, private readonly key: string) {
+  constructor(
+    private readonly store: KeyValueStore,
+    private readonly key: string,
+  ) {
     try {
       const raw = store.getItem(key);
       if (raw) {
@@ -68,10 +85,14 @@ export class RecordQueue {
         this.rows = v.rows;
         this.nextSeq = v.nextSeq;
       }
-    } catch { /* 저장소가 비었거나 깨졌으면 빈 대기열로 시작 */ }
+    } catch {
+      /* 저장소가 비었거나 깨졌으면 빈 대기열로 시작 */
+    }
   }
 
-  get size(): number { return this.rows.length; }
+  get size(): number {
+    return this.rows.length;
+  }
 
   append(itemId: string, startedAtMs: number, endedAtMs: number): number {
     const seq = this.nextSeq++;
@@ -80,7 +101,9 @@ export class RecordQueue {
     return seq;
   }
 
-  pending(max = 500): PlayRecordInput[] { return this.rows.slice(0, max); }
+  pending(max = 500): PlayRecordInput[] {
+    return this.rows.slice(0, max);
+  }
 
   ack(ackSeq: number): void {
     this.rows = this.rows.filter((r) => r.seq > ackSeq);
@@ -88,7 +111,11 @@ export class RecordQueue {
   }
 
   private save(): void {
-    try { this.store.setItem(this.key, JSON.stringify({ rows: this.rows, nextSeq: this.nextSeq })); } catch { /* 저장 실패는 다음 저장 때 다시 시도 */ }
+    try {
+      this.store.setItem(this.key, JSON.stringify({ rows: this.rows, nextSeq: this.nextSeq }));
+    } catch {
+      /* 저장 실패는 다음 저장 때 다시 시도 */
+    }
   }
 }
 
@@ -99,15 +126,25 @@ export class RecordQueue {
  */
 export class PlayTracker {
   private current: { itemId: string; startedAtMs: number } | null = null;
-  constructor(private readonly emit: (itemId: string, startedAtMs: number, endedAtMs: number) => void, private readonly maxSegmentMs = 10 * 60 * 1000) {}
+  constructor(
+    private readonly emit: (itemId: string, startedAtMs: number, endedAtMs: number) => void,
+    private readonly maxSegmentMs = 10 * 60 * 1000,
+  ) {}
 
-  get active(): boolean { return this.current !== null; }
-  get activeStartMs(): number { return this.current?.startedAtMs ?? 0; }
+  get active(): boolean {
+    return this.current !== null;
+  }
+  get activeStartMs(): number {
+    return this.current?.startedAtMs ?? 0;
+  }
 
   observe(itemId: string | null, localMs: number, boundaryMs: number = localMs): void {
     const cur = this.current;
     if (cur && cur.itemId === itemId) {
-      if (localMs - cur.startedAtMs >= this.maxSegmentMs) { this.emit(cur.itemId, cur.startedAtMs, localMs); this.current = { itemId: cur.itemId, startedAtMs: localMs }; }
+      if (localMs - cur.startedAtMs >= this.maxSegmentMs) {
+        this.emit(cur.itemId, cur.startedAtMs, localMs);
+        this.current = { itemId: cur.itemId, startedAtMs: localMs };
+      }
       return;
     }
     const at = cur ? Math.max(cur.startedAtMs, Math.min(boundaryMs, localMs)) : localMs;
@@ -116,5 +153,7 @@ export class PlayTracker {
   }
 
   /** 일시정지·화면 종료처럼 재생이 멈출 때 지금까지를 끊는다 */
-  stop(localMs: number): void { this.observe(null, localMs); }
+  stop(localMs: number): void {
+    this.observe(null, localMs);
+  }
 }

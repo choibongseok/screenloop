@@ -16,12 +16,28 @@ export function CloseMonthButton({ accountId, month, canOperate }: { accountId: 
   }
   return (
     <div>
-      <button className="btn danger" type="button" disabled={!canOperate || busy} onClick={close} data-testid="close-month">{month} 마감하기</button>
+      <button className="btn danger" type="button" disabled={!canOperate || busy} onClick={close} data-testid="close-month">
+        {month} 마감하기
+      </button>
       {!canOperate && <span className="sub"> 보기 전용 계정은 마감할 수 없습니다.</span>}
       {state && (
         <p className={`toast ${state.tone}`} role="status" data-testid="close-result">
           {state.text}
-          {state.invoice && <> · 줄 근거 보기: {state.invoice.lines.map((l, i) => l.id !== null && <span key={i}> <Link href={`/billing/trace/${l.id}`}>{i + 1}번 줄</Link></span>)}</>}
+          {state.invoice && (
+            <>
+              {' '}
+              · 줄 근거 보기:{' '}
+              {state.invoice.lines.map(
+                (l, i) =>
+                  l.id !== null && (
+                    <span key={i}>
+                      {' '}
+                      <Link href={`/billing/trace/${l.id}`}>{i + 1}번 줄</Link>
+                    </span>
+                  ),
+              )}
+            </>
+          )}
         </p>
       )}
     </div>

@@ -12,6 +12,8 @@ export interface EngineDeps {
   now?: () => number;
   flushMs?: number;
   onTrace?: ClientOptions['onTrace'];
+  /** 시계 차이를 다시 재는 주기(ms) */
+  resyncMs?: number;
   setTimer?: ClientOptions['setTimer'];
   clearTimer?: ClientOptions['clearTimer'];
 }
@@ -42,7 +44,7 @@ export class PlayerEngine {
     this.now = deps.now ?? (() => Date.now());
     this.setTimer = deps.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
     this.clearTimer = deps.clearTimer ?? ((t) => clearTimeout(t as ReturnType<typeof setTimeout>));
-    this.client = new DeviceClient(deps.transport, { now: this.now, setTimer: this.setTimer, clearTimer: this.clearTimer, onTrace: deps.onTrace });
+    this.client = new DeviceClient(deps.transport, { now: this.now, setTimer: this.setTimer, clearTimer: this.clearTimer, onTrace: deps.onTrace, resyncMs: deps.resyncMs });
     this.queue = new RecordQueue(deps.store, `sl_queue_${deps.deviceId}`);
     this.tracker = new PlayTracker((itemId, s, e) => this.queue.append(itemId, s, e));
   }
@@ -51,9 +53,15 @@ export class PlayerEngine {
     this.unsubscribe?.();
     this.unsubscribe = this.client.subscribe(() => this.onChange());
     this.client.start();
-    const tick = () => { this.track(); this.tickTimer = this.setTimer(tick, 500); };
+    const tick = () => {
+      this.track();
+      this.tickTimer = this.setTimer(tick, 500);
+    };
     tick();
-    const flushLoop = () => { void this.flush(); this.flushTimer = this.setTimer(flushLoop, this.deps.flushMs ?? 5000); };
+    const flushLoop = () => {
+      void this.flush();
+      this.flushTimer = this.setTimer(flushLoop, this.deps.flushMs ?? 5000);
+    };
     this.flushTimer = this.setTimer(flushLoop, this.deps.flushMs ?? 5000);
   }
 
@@ -80,7 +88,10 @@ export class PlayerEngine {
     if (!view) return;
     const np = this.client.nowPlaying();
     const counting = np && !view.playback.paused && !this.client.overrideActive();
-    if (!counting) { this.tracker.observe(null, local); return; }
+    if (!counting) {
+      this.tracker.observe(null, local);
+      return;
+    }
     // 재생 중에 항목이 바뀐 것이면 실제로 바뀐 시각(지금 - 항목 안 위치)으로 끊는다
     const boundary = this.tracker.active ? Math.max(this.tracker.activeStartMs, local - np.offsetInItemMs) : local;
     this.tracker.observe(np.item.id, local, boundary);

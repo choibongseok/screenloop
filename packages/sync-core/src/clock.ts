@@ -13,6 +13,8 @@ export class ClockSync {
 
   addSample(t0: number, serverMs: number, t1: number): ClockSample {
     const s = { offsetMs: Math.round(serverMs - (t0 + t1) / 2), rttMs: Math.max(0, t1 - t0) };
+    // 기기 시계가 갑자기 바뀐(수동 설정·자동 보정) 경우: 새 표본이 옛 표본과 크게 다르면 옛 표본은 모두 틀린 것이므로 버린다
+    if (this.samples.length > 0 && Math.abs(s.offsetMs - this.offsetMs) > 500 + s.rttMs) this.samples = [];
     this.samples.push(s);
     if (this.samples.length > this.keep) this.samples.shift();
     return s;

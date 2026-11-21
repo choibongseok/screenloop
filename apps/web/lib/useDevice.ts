@@ -31,14 +31,21 @@ export interface DeviceView {
 
 /** 한 화면의 동기화 상태를 구독한다. 상태가 바뀔 때마다 다시 그리고, 재생 위치는 호출한 쪽이 타이머로 읽는다. */
 export function useDevice(deviceId: string, canSend: boolean): DeviceView {
-  const client = useMemo(() => new DeviceClient(browserTransport(deviceId, canSend)), [deviceId, canSend]);
+  const client = useMemo(() => new DeviceClient(browserTransport(deviceId, canSend), { resyncMs: 60_000 }), [deviceId, canSend]);
   const version = useRef(0);
   const snapshot = useSyncExternalStore(
-    (cb) => client.subscribe(() => { version.current++; cb(); }),
+    (cb) =>
+      client.subscribe(() => {
+        version.current++;
+        cb();
+      }),
     () => version.current,
     () => 0,
   );
-  useEffect(() => { client.start(); return () => client.stop(); }, [client]);
+  useEffect(() => {
+    client.start();
+    return () => client.stop();
+  }, [client]);
   void snapshot;
   return { client, state: client.view, connection: client.connection, pending: client.hasPending };
 }
@@ -47,7 +54,13 @@ export function useDevice(deviceId: string, canSend: boolean): DeviceView {
 export function useTick(ms = 500): number {
   const t = useRef(0);
   return useSyncExternalStore(
-    (cb) => { const i = setInterval(() => { t.current++; cb(); }, ms); return () => clearInterval(i); },
+    (cb) => {
+      const i = setInterval(() => {
+        t.current++;
+        cb();
+      }, ms);
+      return () => clearInterval(i);
+    },
     () => t.current,
     () => 0,
   );

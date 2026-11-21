@@ -13,7 +13,12 @@ export async function loginAction(_prev: LoginState, form: FormData): Promise<Lo
   const username = String(form.get('username') ?? '').trim();
   const password = String(form.get('password') ?? '');
   if (!username || !password) return { error: '계정과 비밀번호를 모두 입력하세요.' };
-  const res = await fetch(`${SERVER_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }), cache: 'no-store' });
+  const res = await fetch(`${SERVER_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+    cache: 'no-store',
+  });
   if (!res.ok) return { error: '계정 정보가 맞지 않습니다.' };
   const { token } = (await res.json()) as { token: string };
   (await cookies()).set(TOKEN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 12 * 3600 });

@@ -3,8 +3,12 @@ import { PlayTracker, RecordLedger, RecordQueue } from '../src/index';
 
 class MemStore {
   m = new Map<string, string>();
-  getItem(k: string) { return this.m.get(k) ?? null; }
-  setItem(k: string, v: string) { this.m.set(k, v); }
+  getItem(k: string) {
+    return this.m.get(k) ?? null;
+  }
+  setItem(k: string, v: string) {
+    this.m.set(k, v);
+  }
 }
 
 describe('재생 기록 대기열과 중복 방지', () => {
@@ -41,7 +45,10 @@ describe('재생 기록 대기열과 중복 방지', () => {
     t.observe('i2', 11_000);
     t.observe(null, 20_000);
     t.observe('i3', 21_000);
-    expect(out).toEqual([['i1', 1000, 11_000], ['i2', 11_000, 20_000]]);
+    expect(out).toEqual([
+      ['i1', 1000, 11_000],
+      ['i2', 11_000, 20_000],
+    ]);
   });
 
   it('관측이 늦어도 항목이 실제로 바뀐 시각(boundary)으로 끊는다', () => {
@@ -50,7 +57,10 @@ describe('재생 기록 대기열과 중복 방지', () => {
     t.observe('i1', 0);
     t.observe('i2', 10_400, 10_000); // 10초에 바뀌었는데 10.4초에 알아챔
     t.observe('i3', 31_000, 30_000);
-    expect(out).toEqual([['i1', 0, 10_000], ['i2', 10_000, 30_000]]);
+    expect(out).toEqual([
+      ['i1', 0, 10_000],
+      ['i2', 10_000, 30_000],
+    ]);
     expect(t.activeStartMs).toBe(30_000);
   });
 
@@ -58,6 +68,9 @@ describe('재생 기록 대기열과 중복 방지', () => {
     const out: [string, number, number][] = [];
     const t = new PlayTracker((id, s, e) => out.push([id, s, e]), 60_000);
     for (let ms = 0; ms <= 150_000; ms += 5_000) t.observe('only', ms);
-    expect(out).toEqual([['only', 0, 60_000], ['only', 60_000, 120_000]]);
+    expect(out).toEqual([
+      ['only', 0, 60_000],
+      ['only', 60_000, 120_000],
+    ]);
   });
 });

@@ -15,8 +15,17 @@ let n = 0;
 const id = () => `c${++n}`;
 const c = (o: Record<string, unknown>) => ({ commandId: id(), ...o }) as unknown as Command;
 
-interface Step { nowSec: number; actor: string; command: Command }
-interface Scn { name: string; note: string; steps: Step[]; probes: number[] }
+interface Step {
+  nowSec: number;
+  actor: string;
+  command: Command;
+}
+interface Scn {
+  name: string;
+  note: string;
+  steps: Step[];
+  probes: number[];
+}
 const replace = (base: number, its: unknown[]) => c({ type: 'schedule.replace', baseScheduleVersion: base, items: its });
 const st = (nowSec: number, actor: string, command: Command): Step => ({ nowSec, actor, command });
 
@@ -63,12 +72,16 @@ const scenarios: Scn[] = [
     name: 'time-windows',
     note: '시간대 편성. 09:00~12:00 항목과 12:00~18:00 항목, 자정을 넘기는 항목. 재생 대상이 아닌 항목으로 이동하면 invalid',
     steps: [
-      st(0, 'op-a', replace(0, [
-        { id: 'am', title: '오전 메뉴', sceneId: 'dusk', durationSec: 10, window: { fromMin: 540, toMin: 720 } },
-        { id: 'pm', title: '오후 메뉴', sceneId: 'pulse', durationSec: 20, window: { fromMin: 720, toMin: 1080 } },
-        { id: 'night', title: '야간', sceneId: 'dusk', durationSec: 15, window: { fromMin: 1320, toMin: 360 } },
-        { id: 'all', title: '하루 종일', sceneId: 'grid', durationSec: 5 },
-      ])),
+      st(
+        0,
+        'op-a',
+        replace(0, [
+          { id: 'am', title: '오전 메뉴', sceneId: 'dusk', durationSec: 10, window: { fromMin: 540, toMin: 720 } },
+          { id: 'pm', title: '오후 메뉴', sceneId: 'pulse', durationSec: 20, window: { fromMin: 720, toMin: 1080 } },
+          { id: 'night', title: '야간', sceneId: 'dusk', durationSec: 15, window: { fromMin: 1320, toMin: 360 } },
+          { id: 'all', title: '하루 종일', sceneId: 'grid', durationSec: 5 },
+        ]),
+      ),
       st(1, 'op-a', c({ type: 'playback.jump', itemId: 'pm' })),
       st(2, 'op-a', c({ type: 'playback.jump', itemId: 'night' })),
       st(3, 'op-a', c({ type: 'playback.jump', itemId: 'all' })),
@@ -115,11 +128,15 @@ const scenarios: Scn[] = [
     name: 'window-boundary',
     note: '시간대 경계(11:59:50 편성 후 12:00 를 지나감). 재생 대상이 바뀌면 같은 서버 시각에서 모든 기기가 같은 항목을 가리킨다',
     steps: [
-      st(3 * 3600 - 10, 'op-a', replace(0, [
-        { id: 'am', title: '오전 메뉴', sceneId: 'dusk', durationSec: 10, window: { fromMin: 540, toMin: 720 } },
-        { id: 'pm', title: '오후 메뉴', sceneId: 'pulse', durationSec: 20, window: { fromMin: 720, toMin: 1080 } },
-        { id: 'all', title: '하루 종일', sceneId: 'grid', durationSec: 5 },
-      ])),
+      st(
+        3 * 3600 - 10,
+        'op-a',
+        replace(0, [
+          { id: 'am', title: '오전 메뉴', sceneId: 'dusk', durationSec: 10, window: { fromMin: 540, toMin: 720 } },
+          { id: 'pm', title: '오후 메뉴', sceneId: 'pulse', durationSec: 20, window: { fromMin: 720, toMin: 1080 } },
+          { id: 'all', title: '하루 종일', sceneId: 'grid', durationSec: 5 },
+        ]),
+      ),
     ],
     probes: [3 * 3600 - 10, 3 * 3600 - 1, 3 * 3600, 3 * 3600 + 15, 3 * 3600 + 25],
   },

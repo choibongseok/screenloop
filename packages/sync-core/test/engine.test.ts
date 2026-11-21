@@ -4,7 +4,15 @@ import { DeviceAuthority, PlayerEngine, RecordLedger, type Command, type StateEv
 const T0 = Date.UTC(2026, 10, 21, 0, 0, 0);
 let n = 0;
 const c = (o: object) => ({ commandId: `p${++n}`, ...o }) as Command;
-class Mem { m = new Map<string, string>(); getItem(k: string) { return this.m.get(k) ?? null; } setItem(k: string, v: string) { this.m.set(k, v); } }
+class Mem {
+  m = new Map<string, string>();
+  getItem(k: string) {
+    return this.m.get(k) ?? null;
+  }
+  setItem(k: string, v: string) {
+    this.m.set(k, v);
+  }
+}
 
 /** 서버 흉내(권한자 + 기록 수집 장치). 서버 시계는 가짜 타이머의 Date.now() 를 쓴다. */
 class FakeServer {
@@ -14,28 +22,55 @@ class FakeServer {
   down = false;
   loseReplies = 0; // 서버는 기록을 받았는데 응답이 유실되는 횟수
   constructor() {
-    this.auth.submit(c({ type: 'schedule.replace', baseScheduleVersion: 0, items: [
-      { id: 'a', title: 'A', sceneId: 'aurora', durationSec: 10 },
-      { id: 'b', title: 'B', sceneId: 'waves', durationSec: 20 },
-    ] }), Date.now(), 'seed');
+    this.auth.submit(
+      c({
+        type: 'schedule.replace',
+        baseScheduleVersion: 0,
+        items: [
+          { id: 'a', title: 'A', sceneId: 'aurora', durationSec: 10 },
+          { id: 'b', title: 'B', sceneId: 'waves', durationSec: 20 },
+        ],
+      }),
+      Date.now(),
+      'seed',
+    );
   }
-  command(cmd: Command) { const r = this.auth.submit(cmd, Date.now(), 'op'); if (r.event) this.handlers?.onEvent(r.event); return r; }
-  drop() { this.down = true; this.handlers?.onError(); }
+  command(cmd: Command) {
+    const r = this.auth.submit(cmd, Date.now(), 'op');
+    if (r.event) this.handlers?.onEvent(r.event);
+    return r;
+  }
+  drop() {
+    this.down = true;
+    this.handlers?.onError();
+  }
   transport(): Transport {
     return {
-      fetchSnapshot: async () => { if (this.down) throw new Error('offline'); return { state: structuredClone(this.auth.state), serverTimeMs: Date.now() }; },
+      fetchSnapshot: async () => {
+        if (this.down) throw new Error('offline');
+        return { state: structuredClone(this.auth.state), serverTimeMs: Date.now() };
+      },
       open: (after, h) => {
         this.handlers = h;
         // 서버는 Last-Event-ID 이후 이벤트를 먼저 보낸다
-        queueMicrotask(() => { if (this.down) return; h.onOpen(); for (const e of this.auth.eventsAfter(after)) h.onEvent(e); });
-        return () => { if (this.handlers === h) this.handlers = null; };
+        queueMicrotask(() => {
+          if (this.down) return;
+          h.onOpen();
+          for (const e of this.auth.eventsAfter(after)) h.onEvent(e);
+        });
+        return () => {
+          if (this.handlers === h) this.handlers = null;
+        };
       },
     };
   }
   post = async (deviceId: string, batch: { clockOffsetMs: number; records: never[] }) => {
     if (this.down) throw new Error('offline');
     const r = this.ledger.ingest(deviceId, batch.clockOffsetMs, batch.records, Date.now());
-    if (this.loseReplies > 0) { this.loseReplies--; throw new Error('reply lost'); }
+    if (this.loseReplies > 0) {
+      this.loseReplies--;
+      throw new Error('reply lost');
+    }
     return r;
   };
 }
@@ -46,13 +81,17 @@ function make(s: FakeServer, skew = 0) {
 const run = (ms: number) => vi.advanceTimersByTimeAsync(ms);
 
 describe('PlayerEngine: 재생 기록 만들기·보내기', () => {
-  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(T0); });
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(T0);
+  });
   afterEach(() => vi.useRealTimers());
 
   it('항목이 바뀐 시각을 경계로 빠짐없이 이어지는 재생 기록을 만든다', async () => {
     const s = new FakeServer();
     const e = make(s);
-    e.start(); await run(100);
+    e.start();
+    await run(100);
     await run(65_000);
     await e.flush();
     const rows = s.ledger.rows.slice().sort((x, y) => x.seq - y.seq);
@@ -68,7 +107,8 @@ describe('PlayerEngine: 재생 기록 만들기·보내기', () => {
     const s = new FakeServer();
     s.loseReplies = 1;
     const e = make(s);
-    e.start(); await run(100);
+    e.start();
+    await run(100);
     await run(45_000); // 기록 3~4건이 쌓이고 첫 전송은 응답이 유실됨
     await e.flush();
     const stored = s.ledger.rows.length;
@@ -84,7 +124,8 @@ describe('PlayerEngine: 재생 기록 만들기·보내기', () => {
   it('끊긴 동안에도 마지막 편성으로 계속 재생하며 기록을 쌓고, 다시 붙으면 한꺼번에 보낸다', async () => {
     const s = new FakeServer();
     const e = make(s);
-    e.start(); await run(100);
+    e.start();
+    await run(100);
     s.drop();
     await run(60_000); // 1분 동안 오프라인
     expect(e.client.connection).toBe('offline');
@@ -102,14 +143,18 @@ describe('PlayerEngine: 재생 기록 만들기·보내기', () => {
   it('일시정지 중과 긴급 공지가 덮는 동안은 재생 기록을 쌓지 않는다', async () => {
     const s = new FakeServer();
     const e = make(s);
-    e.start(); await run(100);
-    s.command(c({ type: 'playback.pause' })); await run(100);
+    e.start();
+    await run(100);
+    s.command(c({ type: 'playback.pause' }));
+    await run(100);
     const total = () => s.ledger.rows.length + e.queue.size; // 보낸 것과 아직 대기 중인 것의 합
     const before = total();
     await run(30_000);
     expect(total()).toBe(before); // 멈춘 동안 새 기록 없음
-    s.command(c({ type: 'playback.resume' })); await run(100);
-    s.command(c({ type: 'override.set', text: '긴급', durationSec: 60 })); await run(100);
+    s.command(c({ type: 'playback.resume' }));
+    await run(100);
+    s.command(c({ type: 'override.set', text: '긴급', durationSec: 60 }));
+    await run(100);
     const mid = total();
     await run(30_000);
     expect(total()).toBe(mid);
@@ -119,7 +164,8 @@ describe('PlayerEngine: 재생 기록 만들기·보내기', () => {
   it('기기 시계가 90초 빨라도 오프셋을 같이 보내 서버 시각으로 맞춘 기록이 정확하다', async () => {
     const s = new FakeServer();
     const e = make(s, 90_000);
-    e.start(); await run(100);
+    e.start();
+    await run(100);
     await run(40_000);
     await e.flush();
     expect(s.ledger.rows.length).toBeGreaterThan(0);

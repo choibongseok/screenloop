@@ -17,7 +17,11 @@ test('네트워크가 끊겨도 마지막 편성으로 계속 재생하고, 다�
   await expect(p.page.getByTestId('offline-badge')).toBeVisible();
   // 끊긴 동안에도 마지막 편성으로 계속 돈다(4초짜리 항목이 바뀐다)
   const seen = new Set<string>();
-  for (let i = 0; i < 26; i++) { const id = (await status(p.page)).itemId; if (id) seen.add(id); await p.page.waitForTimeout(500); }
+  for (let i = 0; i < 26; i++) {
+    const id = (await status(p.page)).itemId;
+    if (id) seen.add(id);
+    await p.page.waitForTimeout(500);
+  }
   expect(seen.size).toBeGreaterThanOrEqual(3);
   const offlineSt = await status(p.page);
   expect(offlineSt.queued).toBeGreaterThanOrEqual(2); // 못 보낸 재생 기록이 기기 안에 쌓인다

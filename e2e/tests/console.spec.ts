@@ -20,7 +20,8 @@ test('운영자는 화면 카드 4개를 보고 보기 전용 계정은 조작�
   const vt = await loginApi(request, 'viewer', 'viewer-demo');
   const r = await request.post(`${API}/api/devices/d-001/commands`, { headers: { Authorization: `Bearer ${vt}` }, data: { commandId: cid(), type: 'playback.pause' } });
   expect(r.status()).toBe(403);
-  await op.context.close(); await viewer.context.close();
+  await op.context.close();
+  await viewer.context.close();
 });
 
 test('잘못된 비밀번호는 오류를 보이고, 로그인 없이 열면 로그인 화면으로 보낸다', async ({ browser }) => {

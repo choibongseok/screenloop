@@ -4,7 +4,14 @@ import { writeFileSync } from 'node:fs';
 
 const kst = (s) => Date.parse(s.replace(' ', 'T') + ':00+09:00');
 const H = 3600 * 1000;
-const plan = { screenFeeWon: 9900, tiers: [{ upToHours: 100, rateWonPerHour: 100 }, { upToHours: 300, rateWonPerHour: 80 }, { upToHours: null, rateWonPerHour: 60 }] };
+const plan = {
+  screenFeeWon: 9900,
+  tiers: [
+    { upToHours: 100, rateWonPerHour: 100 },
+    { upToHours: 300, rateWonPerHour: 80 },
+    { upToHours: null, rateWonPerHour: 60 },
+  ],
+};
 const rec = (id, deviceId, start, end, received) => ({ id, deviceId, startMs: start, endMs: end, receivedAtMs: received ?? end });
 
 const scenarios = [];
@@ -20,17 +27,22 @@ const scenarios = [];
   scenarios.push({
     name: 'tier-pricing',
     note: '121시간 = 100시간×100원 + 21시간×80원, 화면 2대 기본료',
-    plan, records,
-    steps: [{
-      op: 'close', month: '2026-10', nowMs: kst('2026-11-01 00:00'),
-      expectLines: [
-        { kind: 'screen', quantity: 2, unitWon: 9900, amountWon: 19800 },
-        { kind: 'usage_tier', quantity: 360000, unitWon: 100, amountWon: 10000 },
-        { kind: 'usage_tier', quantity: 75600, unitWon: 80, amountWon: 1680 },
-      ],
-      expectTotalWon: 31480,
-      expectUsage: usage,
-    }],
+    plan,
+    records,
+    steps: [
+      {
+        op: 'close',
+        month: '2026-10',
+        nowMs: kst('2026-11-01 00:00'),
+        expectLines: [
+          { kind: 'screen', quantity: 2, unitWon: 9900, amountWon: 19800 },
+          { kind: 'usage_tier', quantity: 360000, unitWon: 100, amountWon: 10000 },
+          { kind: 'usage_tier', quantity: 75600, unitWon: 80, amountWon: 1680 },
+        ],
+        expectTotalWon: 31480,
+        expectUsage: usage,
+      },
+    ],
   });
 }
 
@@ -45,18 +57,22 @@ scenarios.push({
     rec(3, 'd-1', kst('2026-10-02 00:20'), kst('2026-10-02 01:00')),
     rec(4, 'd-1', kst('2026-10-02 05:00'), kst('2026-10-02 04:00')),
   ],
-  steps: [{
-    op: 'close', month: '2026-10', nowMs: kst('2026-11-01 00:00'),
-    expectLines: [
-      { kind: 'screen', quantity: 1, unitWon: 9900, amountWon: 9900 },
-      { kind: 'usage_tier', quantity: 5400, unitWon: 100, amountWon: 150 },
-    ],
-    expectTotalWon: 10050,
-    expectUsage: [
-      { deviceId: 'd-1', day: '2026-10-01', billedSeconds: 1800, recordIds: [1] },
-      { deviceId: 'd-1', day: '2026-10-02', billedSeconds: 3600, recordIds: [1, 2, 3] },
-    ],
-  }],
+  steps: [
+    {
+      op: 'close',
+      month: '2026-10',
+      nowMs: kst('2026-11-01 00:00'),
+      expectLines: [
+        { kind: 'screen', quantity: 1, unitWon: 9900, amountWon: 9900 },
+        { kind: 'usage_tier', quantity: 5400, unitWon: 100, amountWon: 150 },
+      ],
+      expectTotalWon: 10050,
+      expectUsage: [
+        { deviceId: 'd-1', day: '2026-10-01', billedSeconds: 1800, recordIds: [1] },
+        { deviceId: 'd-1', day: '2026-10-02', billedSeconds: 3600, recordIds: [1, 2, 3] },
+      ],
+    },
+  ],
 });
 
 // 3. 마감 뒤 늦게 도착한 기록은 다음 정산서의 조정 항목
@@ -72,7 +88,9 @@ scenarios.push({
   ],
   steps: [
     {
-      op: 'close', month: '2026-10', nowMs: kst('2026-11-01 00:00'),
+      op: 'close',
+      month: '2026-10',
+      nowMs: kst('2026-11-01 00:00'),
       expectLines: [
         { kind: 'screen', quantity: 1, unitWon: 9900, amountWon: 9900 },
         { kind: 'usage_tier', quantity: 3600, unitWon: 100, amountWon: 100 },
@@ -81,19 +99,33 @@ scenarios.push({
       expectUsage: [{ deviceId: 'd-1', day: '2026-10-10', billedSeconds: 3600, recordIds: [1] }],
     },
     {
-      op: 'close', month: '2026-11', nowMs: kst('2026-12-01 00:00'),
+      op: 'close',
+      month: '2026-11',
+      nowMs: kst('2026-12-01 00:00'),
       // 11월 몫 10,000 + 10월 차액: 다시 계산하면 화면 2대 19,800 + 12,600초×100/3,600=350 → 20,150, 이미 청구한 10,000 → 차액 10,150
       expectLines: [
         { kind: 'screen', quantity: 1, unitWon: 9900, amountWon: 9900 },
         { kind: 'usage_tier', quantity: 3600, unitWon: 100, amountWon: 100 },
-        { kind: 'adjustment', quantity: 2, unitWon: null, amountWon: 10150, adjustsMonth: '2026-10', basisDays: [{ deviceId: 'd-1', day: '2026-10-20' }, { deviceId: 'd-2', day: '2026-10-25' }] },
+        {
+          kind: 'adjustment',
+          quantity: 2,
+          unitWon: null,
+          amountWon: 10150,
+          adjustsMonth: '2026-10',
+          basisDays: [
+            { deviceId: 'd-1', day: '2026-10-20' },
+            { deviceId: 'd-2', day: '2026-10-25' },
+          ],
+        },
       ],
       expectTotalWon: 20150,
       expectUsage: [{ deviceId: 'd-1', day: '2026-11-05', billedSeconds: 3600, recordIds: [4] }],
     },
     {
       // 같은 달을 마감 뒤 다시 계산해도(재실행) 이미 반영한 차액은 다시 나오지 않는다
-      op: 'preview', month: '2026-12', nowMs: kst('2026-12-02 00:00'),
+      op: 'preview',
+      month: '2026-12',
+      nowMs: kst('2026-12-02 00:00'),
       expectLines: [],
       expectTotalWon: 0,
       expectUsage: [],

@@ -9,7 +9,33 @@ import { parse } from 'yaml';
 const check = process.argv.includes('--check');
 const doc = parse(readFileSync('spec/openapi.yaml', 'utf8'));
 const defs = JSON.parse(JSON.stringify(doc.components.schemas).replaceAll('#/components/schemas/', '#/$defs/'));
-const keep = ['Schedule', 'ScheduleItem', 'Window', 'Playback', 'Override', 'DeviceState', 'Snapshot', 'ScheduleReplaced', 'PlaybackChanged', 'VolumeChanged', 'OverrideSet', 'OverrideCleared', 'StateEvent', 'Command', 'CommandBase', 'ScheduleReplaceCommand', 'PlaybackNextCommand', 'PlaybackJumpCommand', 'PlaybackPauseCommand', 'PlaybackResumeCommand', 'PlaybackSeekCommand', 'VolumeSetCommand', 'OverrideSetCommand', 'OverrideClearCommand', 'CommandResult'];
+const keep = [
+  'Schedule',
+  'ScheduleItem',
+  'Window',
+  'Playback',
+  'Override',
+  'DeviceState',
+  'Snapshot',
+  'ScheduleReplaced',
+  'PlaybackChanged',
+  'VolumeChanged',
+  'OverrideSet',
+  'OverrideCleared',
+  'StateEvent',
+  'Command',
+  'CommandBase',
+  'ScheduleReplaceCommand',
+  'PlaybackNextCommand',
+  'PlaybackJumpCommand',
+  'PlaybackPauseCommand',
+  'PlaybackResumeCommand',
+  'PlaybackSeekCommand',
+  'VolumeSetCommand',
+  'OverrideSetCommand',
+  'OverrideClearCommand',
+  'CommandResult',
+];
 const out = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   $id: 'https://screenloop.example/events.schema.json',
@@ -20,7 +46,8 @@ const eventsText = JSON.stringify(out, null, 2) + '\n';
 const problems = [];
 
 if (check) {
-  if (!existsSync('spec/events.schema.json') || readFileSync('spec/events.schema.json', 'utf8') !== eventsText) problems.push('spec/events.schema.json 이 openapi.yaml 과 다름 (npm run spec:export)');
+  if (!existsSync('spec/events.schema.json') || readFileSync('spec/events.schema.json', 'utf8') !== eventsText)
+    problems.push('spec/events.schema.json 이 openapi.yaml 과 다름 (npm run spec:export)');
 } else {
   writeFileSync('spec/events.schema.json', eventsText);
 }
@@ -33,5 +60,8 @@ if (check) {
 } else {
   writeFileSync(tsPath, generated);
 }
-if (problems.length) { console.error('명세와 생성물이 어긋남:\n - ' + problems.join('\n - ')); process.exit(1); }
+if (problems.length) {
+  console.error('명세와 생성물이 어긋남:\n - ' + problems.join('\n - '));
+  process.exit(1);
+}
 console.log(check ? '명세와 생성물(이벤트 스키마·TS 타입)이 일치' : '생성 완료: spec/events.schema.json, ' + tsPath);

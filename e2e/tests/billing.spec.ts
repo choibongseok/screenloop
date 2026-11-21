@@ -54,14 +54,28 @@ test('월 마감: 보기 전용은 못 하고, 운영자는 마감한 뒤 정산
   await expect(op.page.getByTestId('close-result')).toContainText(`${month} 을 마감했습니다`);
   await expect(op.page.getByTestId('close-result')).toContainText(`합계 ${before.toLocaleString('ko-KR')}원`);
   // 실제 서버가 계산한 정산 줄과 근거를 모아 데모 사이트가 싣는 증거 파일로 남긴다
-  const hrefs = await op.page.getByTestId('close-result').locator('a').evaluateAll((a) => a.map((x) => x.getAttribute('href') as string));
+  const hrefs = await op.page
+    .getByTestId('close-result')
+    .locator('a')
+    .evaluateAll((a) => a.map((x) => x.getAttribute('href') as string));
   const opTok = await loginApi(request);
   const lines = [];
   for (const h of hrefs) {
     const t = await (await request.get(`${API}/api/invoice-lines/${h.split('/').pop()}/trace`, { headers: { Authorization: `Bearer ${opTok}` } })).json();
-    lines.push({ kind: t.line.kind, description: t.line.description, quantity: t.line.quantity, unitWon: t.line.unitWon, amountWon: t.line.amountWon, dailyRows: t.daily.length, sourceRecords: t.records.length });
+    lines.push({
+      kind: t.line.kind,
+      description: t.line.description,
+      quantity: t.line.quantity,
+      unitWon: t.line.unitWon,
+      amountWon: t.line.amountWon,
+      dailyRows: t.daily.length,
+      sourceRecords: t.records.length,
+    });
   }
-  writeFileSync(resolve(import.meta.dirname, '../../docs/evidence/e2e-billing.json'), JSON.stringify({ generatedBy: 'e2e: compose 로 올린 실제 서버·플레이어가 만든 재생 기록으로 월을 마감한 결과', month, totalWon: before, lines }, null, 2) + '\n');
+  writeFileSync(
+    resolve(import.meta.dirname, '../../docs/evidence/e2e-billing.json'),
+    JSON.stringify({ generatedBy: 'e2e: compose 로 올린 실제 서버·플레이어가 만든 재생 기록으로 월을 마감한 결과', month, totalWon: before, lines }, null, 2) + '\n',
+  );
   await op.page.getByTestId('close-result').getByRole('link', { name: '2번 줄' }).click();
   await expect(op.page.getByTestId('trace-line')).toContainText('재생');
   const traceRows = op.page.getByTestId('trace-records').locator('tbody tr');

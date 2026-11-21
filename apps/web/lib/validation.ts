@@ -40,8 +40,14 @@ export const hasErrors = (e: ItemErrors): boolean => Object.keys(e).length > 0;
 
 export function toDraft(it: ScheduleItem, key: string): ItemDraft {
   return {
-    key, id: it.id, title: it.title, sceneId: it.sceneId, durationSec: String(it.durationSec),
-    windowOn: !!it.window, from: it.window ? toHHMM(it.window.fromMin) : '09:00', to: it.window ? toHHMM(it.window.toMin) : '18:00',
+    key,
+    id: it.id,
+    title: it.title,
+    sceneId: it.sceneId,
+    durationSec: String(it.durationSec),
+    windowOn: !!it.window,
+    from: it.window ? toHHMM(it.window.fromMin) : '09:00',
+    to: it.window ? toHHMM(it.window.toMin) : '18:00',
   };
 }
 

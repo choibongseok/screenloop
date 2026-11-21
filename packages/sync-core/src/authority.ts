@@ -6,8 +6,7 @@ const SCENES = ['aurora', 'waves', 'grid', 'pulse', 'dusk'];
 
 type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
 export type Decision =
-  | { result: 'accepted'; event: DistributiveOmit<StateEvent, 'deviceId' | 'version' | 'serverTimeMs' | 'actor'> }
-  | { result: 'rejected'; reason: RejectReason };
+  { result: 'accepted'; event: DistributiveOmit<StateEvent, 'deviceId' | 'version' | 'serverTimeMs' | 'actor'> } | { result: 'rejected'; reason: RejectReason };
 
 const isInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
 

@@ -18,13 +18,18 @@ export class SceneCache {
       try {
         const path = `/scenes/${id}.svg`;
         let res = await c.match(path);
-        if (!res) { await c.add(path); res = await c.match(path); }
+        if (!res) {
+          await c.add(path);
+          res = await c.match(path);
+        }
         if (res) {
           this.urls.set(id, URL.createObjectURL(await res.blob()));
           this.cached.add(id);
           onChange();
         }
-      } catch { /* 네트워크가 안 되면 다음 편성표 변경 때 다시 시도 */ }
+      } catch {
+        /* 네트워크가 안 되면 다음 편성표 변경 때 다시 시도 */
+      }
       this.inflight.delete(id);
     }
   }

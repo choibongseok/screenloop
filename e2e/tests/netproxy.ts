@@ -8,13 +8,19 @@ import type { Socket } from 'node:net';
 export class CuttableProxy {
   private sockets = new Set<Socket>();
   private isCut = false;
-  private constructor(private readonly server: http.Server, readonly port: number) {}
+  private constructor(
+    private readonly server: http.Server,
+    readonly port: number,
+  ) {}
 
   static async start(target: string): Promise<CuttableProxy> {
     const t = new URL(target);
-    let self: CuttableProxy;
+    const holder: { self?: CuttableProxy } = {};
     const server = http.createServer((req, res) => {
-      if (self.isCut) { req.socket.destroy(); return; }
+      if (holder.self!.isCut) {
+        req.socket.destroy();
+        return;
+      }
       const up = http.request({ host: t.hostname, port: t.port, path: req.url, method: req.method, headers: req.headers }, (ur) => {
         res.writeHead(ur.statusCode ?? 502, ur.headers);
         ur.pipe(res);
@@ -23,14 +29,27 @@ export class CuttableProxy {
       res.on('close', () => up.destroy());
       req.pipe(up);
     });
-    server.on('connection', (s) => { self.sockets.add(s); s.on('close', () => self.sockets.delete(s)); });
+    server.on('connection', (s) => {
+      holder.self!.sockets.add(s);
+      s.on('close', () => holder.self!.sockets.delete(s));
+    });
     await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
-    self = new CuttableProxy(server, (server.address() as { port: number }).port);
-    return self;
+    holder.self = new CuttableProxy(server, (server.address() as { port: number }).port);
+    return holder.self;
   }
 
-  get url(): string { return `http://127.0.0.1:${this.port}`; }
-  cut(): void { this.isCut = true; for (const s of this.sockets) s.destroy(); }
-  restore(): void { this.isCut = false; }
-  async stop(): Promise<void> { this.cut(); await new Promise<void>((ok) => this.server.close(() => ok())); }
+  get url(): string {
+    return `http://127.0.0.1:${this.port}`;
+  }
+  cut(): void {
+    this.isCut = true;
+    for (const s of this.sockets) s.destroy();
+  }
+  restore(): void {
+    this.isCut = false;
+  }
+  async stop(): Promise<void> {
+    this.cut();
+    await new Promise<void>((ok) => this.server.close(() => ok()));
+  }
 }

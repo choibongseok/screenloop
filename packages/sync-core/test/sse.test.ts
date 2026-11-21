@@ -6,9 +6,15 @@ class FakeES implements EventSourceLike {
   onerror: ((ev: unknown) => void) | null = null;
   closed = false;
   private l = new Map<string, (ev: { data: string }) => void>();
-  addEventListener(type: string, fn: (ev: { data: string }) => void) { this.l.set(type, fn); }
-  close() { this.closed = true; }
-  emit(type: string, data: string) { this.l.get(type)?.({ data }); }
+  addEventListener(type: string, fn: (ev: { data: string }) => void) {
+    this.l.set(type, fn);
+  }
+  close() {
+    this.closed = true;
+  }
+  emit(type: string, data: string) {
+    this.l.get(type)?.({ data });
+  }
 }
 const ev = (v: number): StateEvent => ({ type: 'volume.changed', deviceId: 'd', version: v, serverTimeMs: 1, actor: 'a', volume: 10 });
 
@@ -31,7 +37,10 @@ describe('openEventStream: 이벤트 스트림과 하트비트 감시', () => {
     let errors = 0;
     openEventStream('/s', { onEvent: () => undefined, onOpen: () => undefined, onError: () => errors++ }, { create: () => es });
     es.onopen?.({});
-    for (let i = 0; i < 6; i++) { await vi.advanceTimersByTimeAsync(5000); es.emit('hb', 'hb'); }
+    for (let i = 0; i < 6; i++) {
+      await vi.advanceTimersByTimeAsync(5000);
+      es.emit('hb', 'hb');
+    }
     expect(errors).toBe(0);
     await vi.advanceTimersByTimeAsync(15_100); // 반쯤 열린 연결: 오류 알림 없이 조용해짐
     expect(errors).toBe(1);
@@ -55,5 +64,15 @@ describe('openEventStream: 이벤트 스트림과 하트비트 감시', () => {
     es.onerror?.({});
     expect(errors).toBe(1);
     expect(es.closed).toBe(true);
+  });
+
+  it('하트비트의 서버 버전을 알려 주고, 형식이 다른 하트비트는 무시한다', () => {
+    const es = new FakeES();
+    const seen: number[] = [];
+    openEventStream('/s', { onEvent: () => undefined, onOpen: () => undefined, onError: () => undefined, onHeartbeat: (v) => seen.push(v) }, { create: () => es });
+    es.emit('hb', 'v=12');
+    es.emit('hb', 'hb');
+    es.emit('hb', 'v=13');
+    expect(seen).toEqual([12, 13]);
   });
 });

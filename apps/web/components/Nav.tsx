@@ -14,7 +14,9 @@ export function Nav() {
   return (
     <nav className="nav" aria-label="주 메뉴">
       {links.map((l) => (
-        <Link key={l.href} href={l.href} aria-current={active(l.href) ? 'page' : undefined}>{l.label}</Link>
+        <Link key={l.href} href={l.href} aria-current={active(l.href) ? 'page' : undefined}>
+          {l.label}
+        </Link>
       ))}
     </nav>
   );

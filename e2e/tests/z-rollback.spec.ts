@@ -7,7 +7,13 @@ const root = resolve(import.meta.dirname, '../..');
 const sh = (script: string, args: string[], env: Record<string, string> = {}) =>
   execFileSync('bash', [resolve(root, 'scripts', script), ...args], { cwd: root, env: { ...process.env, ...env }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const shFail = (script: string, args: string[], env: Record<string, string>) => {
-  try { sh(script, args, env); return { code: 0, out: '' }; } catch (e) { const x = e as { status: number; stdout: string; stderr: string }; return { code: x.status, out: `${x.stdout}\n${x.stderr}` }; }
+  try {
+    sh(script, args, env);
+    return { code: 0, out: '' };
+  } catch (e) {
+    const x = e as { status: number; stdout: string; stderr: string };
+    return { code: x.status, out: `${x.stdout}\n${x.stderr}` };
+  }
 };
 const version = async (request: import('@playwright/test').APIRequestContext) => (await (await request.get(`${API}/api/version`)).json()).version as string;
 

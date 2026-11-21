@@ -12,6 +12,8 @@ export interface StreamHandlers {
   onEvent(ev: StateEvent): void;
   onOpen(): void;
   onError(): void;
+  /** 서버 하트비트가 알려 준 서버의 최신 버전. 마지막 이벤트가 유실돼 빠진 구간이 안 보이는 경우를 잡는다. */
+  onHeartbeat?(version: number): void;
 }
 
 export interface StreamOptions {
@@ -48,11 +50,22 @@ export function openEventStream(url: string, h: StreamHandlers, opts: StreamOpti
     if (timer) clearTimer(timer);
     es.close();
   };
-  es.onopen = () => { arm(); h.onOpen(); };
-  es.addEventListener('hb', () => arm());
+  es.onopen = () => {
+    arm();
+    h.onOpen();
+  };
+  es.addEventListener('hb', (m) => {
+    arm();
+    const v = /^v=(\d+)/.exec(m.data);
+    if (v) h.onHeartbeat?.(Number(v[1]));
+  });
   es.addEventListener('state', (m) => {
     arm();
-    try { h.onEvent(JSON.parse(m.data) as StateEvent); } catch { /* 깨진 메시지는 버린다. 빠진 버전은 Replica 가 스냅샷으로 메운다 */ }
+    try {
+      h.onEvent(JSON.parse(m.data) as StateEvent);
+    } catch {
+      /* 깨진 메시지는 버린다. 빠진 버전은 Replica 가 스냅샷으로 메운다 */
+    }
   });
   es.onerror = fail;
   arm();

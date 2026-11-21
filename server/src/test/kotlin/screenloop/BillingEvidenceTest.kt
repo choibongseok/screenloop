@@ -55,7 +55,8 @@ class BillingEvidenceTest {
                     lines++
                 }
                 val us = st.putArray("usage")
-                for (u in calc.usage.filter { Billing.monthOf(it.day) == month }) us.addObject().put("deviceId", u.deviceId).put("day", u.day).put("billedSeconds", u.billedSeconds).set<JsonNode>("recordIds", m.valueToTree(u.recordIds))
+                val basisKeys = calc.lines.flatMap { l -> l.basis.map { "${it.deviceId} ${it.day}" } }.toSet()
+                for (u in calc.usage.filter { Billing.monthOf(it.day) == month || "${it.deviceId} ${it.day}" in basisKeys }) us.addObject().put("deviceId", u.deviceId).put("day", u.day).put("billedSeconds", u.billedSeconds).set<JsonNode>("recordIds", m.valueToTree(u.recordIds))
                 if (step["op"].asText() == "close") {
                     val own = calc.lines.filter { it.kind != "adjustment" }.sumOf { it.amountWon }
                     for (adj in calc.lines.filter { it.kind == "adjustment" }) {

@@ -15,5 +15,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     cache: 'no-store',
   });
   if (!upstream.ok || !upstream.body) return new Response('upstream error', { status: 502 });
-  return new Response(upstream.body, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' } });
+  return new Response(upstream.body, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' },
+  });
 }

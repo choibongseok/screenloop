@@ -26,6 +26,7 @@ export const errorToast = (message: string): Toast => ({ tone: 'bad', text: mess
 let n = 0;
 /** 명령 ID. 같은 ID 로 다시 보내면 서버가 처음 결과를 돌려준다. */
 export function newCommandId(): string {
-  const rnd = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${(n++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const rnd =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${(n++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   return `web-${rnd}`;
 }

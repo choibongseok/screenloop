@@ -32,20 +32,44 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         <form className="row" method="get">
           <input type="hidden" name="month" value={month} />
           <label htmlFor="dev">화면</label>
-          <select id="dev" name="device" defaultValue={deviceId}>{devices.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.id})</option>)}</select>
-          <button className="btn small" type="submit">보기</button>
-          <span className="sub" data-testid="record-summary">최근 {records.length}건 중 정산 대상 {accepted}건, 보류 {records.length - accepted}건</span>
+          <select id="dev" name="device" defaultValue={deviceId}>
+            {devices.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} ({d.id})
+              </option>
+            ))}
+          </select>
+          <button className="btn small" type="submit">
+            보기
+          </button>
+          <span className="sub" data-testid="record-summary">
+            최근 {records.length}건 중 정산 대상 {accepted}건, 보류 {records.length - accepted}건
+          </span>
         </form>
-        {records.length === 0 ? <p className="empty">아직 수집된 재생 기록이 없습니다.</p> : (
+        {records.length === 0 ? (
+          <p className="empty">아직 수집된 재생 기록이 없습니다.</p>
+        ) : (
           <div className="scroll" style={{ marginTop: 8, maxHeight: 360, overflow: 'auto' }}>
             <table aria-label="재생 기록 목록" data-testid="records-table">
-              <thead><tr><th className="num">일련번호</th><th>항목</th><th>서버 시각 시작</th><th className="num">길이(초)</th><th>상태</th></tr></thead>
+              <thead>
+                <tr>
+                  <th className="num">일련번호</th>
+                  <th>항목</th>
+                  <th>서버 시각 시작</th>
+                  <th className="num">길이(초)</th>
+                  <th>상태</th>
+                </tr>
+              </thead>
               <tbody>
                 {records.map((r) => (
                   <tr key={r.id}>
-                    <td className="num">{r.seq}</td><td>{r.itemId}</td><td className="mono">{when(r.serverStartedAtMs)}</td>
+                    <td className="num">{r.seq}</td>
+                    <td>{r.itemId}</td>
+                    <td className="mono">{when(r.serverStartedAtMs)}</td>
                     <td className="num">{Math.round((r.endedAtMs - r.startedAtMs) / 1000)}</td>
-                    <td>{r.status === 'accepted' ? <span className="badge ok">정산 대상</span> : <span className="badge warn">보류: {reasonText[r.reason ?? ''] ?? r.reason}</span>}</td>
+                    <td>
+                      {r.status === 'accepted' ? <span className="badge ok">정산 대상</span> : <span className="badge warn">보류: {reasonText[r.reason ?? ''] ?? r.reason}</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -60,18 +84,50 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           {deviceId && <input type="hidden" name="device" value={deviceId} />}
           <label htmlFor="month">월</label>
           <input id="month" name="month" type="text" defaultValue={month} pattern="\d{4}-\d{2}" style={{ width: 90 }} aria-describedby="month-help" />
-          <button className="btn small" type="submit">계산</button>
-          <span id="month-help" className="sub">YYYY-MM 형식. 저장하지 않는 미리보기입니다.</span>
+          <button className="btn small" type="submit">
+            계산
+          </button>
+          <span id="month-help" className="sub">
+            YYYY-MM 형식. 저장하지 않는 미리보기입니다.
+          </span>
         </form>
-        {invoice.lines.length === 0 ? <p className="empty" data-testid="invoice-empty">{month} 에 정산할 재생 기록이 없습니다.</p> : (
+        {invoice.lines.length === 0 ? (
+          <p className="empty" data-testid="invoice-empty">
+            {month} 에 정산할 재생 기록이 없습니다.
+          </p>
+        ) : (
           <div className="scroll" style={{ marginTop: 8 }}>
             <table aria-label={`${month} 정산서`} data-testid="invoice-table">
-              <thead><tr><th>구분</th><th>내용</th><th className="num">수량</th><th className="num">단가</th><th className="num">금액</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>내용</th>
+                  <th className="num">수량</th>
+                  <th className="num">단가</th>
+                  <th className="num">금액</th>
+                </tr>
+              </thead>
               <tbody>
                 {invoice.lines.map((l, i) => (
-                  <tr key={i}><td>{kindText[l.kind]}</td><td>{l.description}</td><td className="num">{l.quantity.toLocaleString('ko-KR')}{l.kind === 'usage_tier' ? '초' : ''}</td><td className="num">{l.unitWon === null ? '—' : won(l.unitWon)}</td><td className="num">{won(l.amountWon)}</td></tr>
+                  <tr key={i}>
+                    <td>{kindText[l.kind]}</td>
+                    <td>{l.description}</td>
+                    <td className="num">
+                      {l.quantity.toLocaleString('ko-KR')}
+                      {l.kind === 'usage_tier' ? '초' : ''}
+                    </td>
+                    <td className="num">{l.unitWon === null ? '—' : won(l.unitWon)}</td>
+                    <td className="num">{won(l.amountWon)}</td>
+                  </tr>
                 ))}
-                <tr><th colSpan={4} style={{ textAlign: 'right' }}>합계</th><td className="num" data-testid="invoice-total"><strong>{won(invoice.totalWon)}</strong></td></tr>
+                <tr>
+                  <th colSpan={4} style={{ textAlign: 'right' }}>
+                    합계
+                  </th>
+                  <td className="num" data-testid="invoice-total">
+                    <strong>{won(invoice.totalWon)}</strong>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -80,7 +136,9 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           <CloseMonthButton accountId="acct-1" month={month} canOperate={s.role === 'operator'} />
         </div>
       </section>
-      <p className="sub">마감한 정산서는 <Link href="/billing/trace/0">줄마다 근거 기록</Link>을 거슬러 올라가 볼 수 있습니다(마감 뒤 정산 줄의 번호로 열립니다).</p>
+      <p className="sub">
+        마감한 정산서는 <Link href="/billing/trace/0">줄마다 근거 기록</Link>을 거슬러 올라가 볼 수 있습니다(마감 뒤 정산 줄의 번호로 열립니다).
+      </p>
     </>
   );
 }

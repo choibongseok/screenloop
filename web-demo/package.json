@@ -1,0 +1,13 @@
+{
+  "name": "@screenloop/web-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "데모 사이트(정적). sync-core 와 같은 코드를 브라우저에서 돌린다",
+  "scripts": { "build": "node build.mjs", "test": "playwright test" },
+  "dependencies": {
+    "@screenloop/scenes": "*",
+    "@screenloop/sync-core": "*"
+  },
+  "devDependencies": { "@playwright/test": "1.65.1" }
+}
