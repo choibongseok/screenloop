@@ -13,3 +13,4 @@ playwright-report/
 .deploy/
 .test-results-verify.log
 apps/web/next-env.d.ts
+*.tsbuildinfo
