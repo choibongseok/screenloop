@@ -1,0 +1,427 @@
+{
+  "generatedBy" : "server 의 Billing(Kotlin)을 spec/vectors/billing.json 입력으로 실행한 결과",
+  "scenarios" : [ {
+    "name" : "tier-pricing",
+    "note" : "121시간 = 100시간×100원 + 21시간×80원, 화면 2대 기본료",
+    "plan" : {
+      "screenFeeWon" : 9900,
+      "tiers" : [ {
+        "upToHours" : 100,
+        "rateWonPerHour" : 100
+      }, {
+        "upToHours" : 300,
+        "rateWonPerHour" : 80
+      }, {
+        "upToHours" : null,
+        "rateWonPerHour" : 60
+      } ]
+    },
+    "records" : [ {
+      "id" : 1,
+      "deviceId" : "d-1",
+      "start" : "2026-10-01 00:00",
+      "end" : "2026-10-01 06:00",
+      "receivedAt" : "2026-10-01 06:00",
+      "seconds" : 21600
+    }, {
+      "id" : 2,
+      "deviceId" : "d-1",
+      "start" : "2026-10-01 06:00",
+      "end" : "2026-10-01 12:00",
+      "receivedAt" : "2026-10-01 12:00",
+      "seconds" : 21600
+    }, {
+      "id" : 3,
+      "deviceId" : "d-1",
+      "start" : "2026-10-01 12:00",
+      "end" : "2026-10-01 18:00",
+      "receivedAt" : "2026-10-01 18:00",
+      "seconds" : 21600
+    }, {
+      "id" : 4,
+      "deviceId" : "d-1",
+      "start" : "2026-10-01 18:00",
+      "end" : "2026-10-02 00:00",
+      "receivedAt" : "2026-10-02 00:00",
+      "seconds" : 21600
+    }, {
+      "id" : 5,
+      "deviceId" : "d-1",
+      "start" : "2026-10-02 00:00",
+      "end" : "2026-10-02 06:00",
+      "receivedAt" : "2026-10-02 06:00",
+      "seconds" : 21600
+    }, {
+      "id" : 6,
+      "deviceId" : "d-1",
+      "start" : "2026-10-02 06:00",
+      "end" : "2026-10-02 12:00",
+      "receivedAt" : "2026-10-02 12:00",
+      "seconds" : 21600
+    }, {
+      "id" : 7,
+      "deviceId" : "d-1",
+      "start" : "2026-10-02 12:00",
+      "end" : "2026-10-02 18:00",
+      "receivedAt" : "2026-10-02 18:00",
+      "seconds" : 21600
+    }, {
+      "id" : 8,
+      "deviceId" : "d-1",
+      "start" : "2026-10-02 18:00",
+      "end" : "2026-10-03 00:00",
+      "receivedAt" : "2026-10-03 00:00",
+      "seconds" : 21600
+    }, {
+      "id" : 9,
+      "deviceId" : "d-1",
+      "start" : "2026-10-03 00:00",
+      "end" : "2026-10-03 06:00",
+      "receivedAt" : "2026-10-03 06:00",
+      "seconds" : 21600
+    }, {
+      "id" : 10,
+      "deviceId" : "d-1",
+      "start" : "2026-10-03 06:00",
+      "end" : "2026-10-03 12:00",
+      "receivedAt" : "2026-10-03 12:00",
+      "seconds" : 21600
+    }, {
+      "id" : 11,
+      "deviceId" : "d-1",
+      "start" : "2026-10-03 12:00",
+      "end" : "2026-10-03 18:00",
+      "receivedAt" : "2026-10-03 18:00",
+      "seconds" : 21600
+    }, {
+      "id" : 12,
+      "deviceId" : "d-1",
+      "start" : "2026-10-03 18:00",
+      "end" : "2026-10-04 00:00",
+      "receivedAt" : "2026-10-04 00:00",
+      "seconds" : 21600
+    }, {
+      "id" : 13,
+      "deviceId" : "d-1",
+      "start" : "2026-10-04 00:00",
+      "end" : "2026-10-04 06:00",
+      "receivedAt" : "2026-10-04 06:00",
+      "seconds" : 21600
+    }, {
+      "id" : 14,
+      "deviceId" : "d-1",
+      "start" : "2026-10-04 06:00",
+      "end" : "2026-10-04 12:00",
+      "receivedAt" : "2026-10-04 12:00",
+      "seconds" : 21600
+    }, {
+      "id" : 15,
+      "deviceId" : "d-1",
+      "start" : "2026-10-04 12:00",
+      "end" : "2026-10-04 18:00",
+      "receivedAt" : "2026-10-04 18:00",
+      "seconds" : 21600
+    }, {
+      "id" : 16,
+      "deviceId" : "d-1",
+      "start" : "2026-10-04 18:00",
+      "end" : "2026-10-05 00:00",
+      "receivedAt" : "2026-10-05 00:00",
+      "seconds" : 21600
+    }, {
+      "id" : 17,
+      "deviceId" : "d-1",
+      "start" : "2026-10-05 00:00",
+      "end" : "2026-10-05 06:00",
+      "receivedAt" : "2026-10-05 06:00",
+      "seconds" : 21600
+    }, {
+      "id" : 18,
+      "deviceId" : "d-1",
+      "start" : "2026-10-05 06:00",
+      "end" : "2026-10-05 12:00",
+      "receivedAt" : "2026-10-05 12:00",
+      "seconds" : 21600
+    }, {
+      "id" : 19,
+      "deviceId" : "d-1",
+      "start" : "2026-10-05 12:00",
+      "end" : "2026-10-05 18:00",
+      "receivedAt" : "2026-10-05 18:00",
+      "seconds" : 21600
+    }, {
+      "id" : 20,
+      "deviceId" : "d-1",
+      "start" : "2026-10-05 18:00",
+      "end" : "2026-10-06 00:00",
+      "receivedAt" : "2026-10-06 00:00",
+      "seconds" : 21600
+    }, {
+      "id" : 21,
+      "deviceId" : "d-2",
+      "start" : "2026-10-03 10:00",
+      "end" : "2026-10-03 11:00",
+      "receivedAt" : "2026-10-03 11:00",
+      "seconds" : 3600
+    } ],
+    "steps" : [ {
+      "op" : "close",
+      "month" : "2026-10",
+      "at" : "2026-11-01 00:00",
+      "totalWon" : 31480,
+      "lines" : [ {
+        "kind" : "screen",
+        "description" : "화면 2대 기본료",
+        "quantity" : 2,
+        "amountWon" : 19800,
+        "unitWon" : 9900,
+        "basisDays" : [ "d-1 2026-10-01", "d-1 2026-10-02", "d-1 2026-10-03", "d-1 2026-10-04", "d-1 2026-10-05", "d-2 2026-10-03" ]
+      }, {
+        "kind" : "usage_tier",
+        "description" : "재생 0~100시간 구간",
+        "quantity" : 360000,
+        "amountWon" : 10000,
+        "unitWon" : 100,
+        "basisDays" : [ "d-1 2026-10-01", "d-1 2026-10-02", "d-1 2026-10-03", "d-1 2026-10-04", "d-1 2026-10-05", "d-2 2026-10-03" ]
+      }, {
+        "kind" : "usage_tier",
+        "description" : "재생 100~300시간 구간",
+        "quantity" : 75600,
+        "amountWon" : 1680,
+        "unitWon" : 80,
+        "basisDays" : [ "d-1 2026-10-01", "d-1 2026-10-02", "d-1 2026-10-03", "d-1 2026-10-04", "d-1 2026-10-05", "d-2 2026-10-03" ]
+      } ],
+      "usage" : [ {
+        "deviceId" : "d-1",
+        "day" : "2026-10-01",
+        "billedSeconds" : 86400,
+        "recordIds" : [ 1, 2, 3, 4 ]
+      }, {
+        "deviceId" : "d-1",
+        "day" : "2026-10-02",
+        "billedSeconds" : 86400,
+        "recordIds" : [ 5, 6, 7, 8 ]
+      }, {
+        "deviceId" : "d-1",
+        "day" : "2026-10-03",
+        "billedSeconds" : 86400,
+        "recordIds" : [ 9, 10, 11, 12 ]
+      }, {
+        "deviceId" : "d-1",
+        "day" : "2026-10-04",
+        "billedSeconds" : 86400,
+        "recordIds" : [ 13, 14, 15, 16 ]
+      }, {
+        "deviceId" : "d-1",
+        "day" : "2026-10-05",
+        "billedSeconds" : 86400,
+        "recordIds" : [ 17, 18, 19, 20 ]
+      }, {
+        "deviceId" : "d-2",
+        "day" : "2026-10-03",
+        "billedSeconds" : 3600,
+        "recordIds" : [ 21 ]
+      } ]
+    } ]
+  }, {
+    "name" : "overlap-and-midnight",
+    "note" : "겹친 구간은 한 번만 센다. 자정을 넘는 기록은 날짜별로 나눈다. 길이가 없는 기록은 무시",
+    "plan" : {
+      "screenFeeWon" : 9900,
+      "tiers" : [ {
+        "upToHours" : 100,
+        "rateWonPerHour" : 100
+      }, {
+        "upToHours" : 300,
+        "rateWonPerHour" : 80
+      }, {
+        "upToHours" : null,
+        "rateWonPerHour" : 60
+      } ]
+    },
+    "records" : [ {
+      "id" : 1,
+      "deviceId" : "d-1",
+      "start" : "2026-10-01 23:30",
+      "end" : "2026-10-02 00:30",
+      "receivedAt" : "2026-10-02 00:30",
+      "seconds" : 3600
+    }, {
+      "id" : 2,
+      "deviceId" : "d-1",
+      "start" : "2026-10-02 00:10",
+      "end" : "2026-10-02 00:40",
+      "receivedAt" : "2026-10-02 00:40",
+      "seconds" : 1800
+    }, {
+      "id" : 3,
+      "deviceId" : "d-1",
+      "start" : "2026-10-02 00:20",
+      "end" : "2026-10-02 01:00",
+      "receivedAt" : "2026-10-02 01:00",
+      "seconds" : 2400
+    }, {
+      "id" : 4,
+      "deviceId" : "d-1",
+      "start" : "2026-10-02 05:00",
+      "end" : "2026-10-02 04:00",
+      "receivedAt" : "2026-10-02 04:00",
+      "seconds" : -3600
+    } ],
+    "steps" : [ {
+      "op" : "close",
+      "month" : "2026-10",
+      "at" : "2026-11-01 00:00",
+      "totalWon" : 10050,
+      "lines" : [ {
+        "kind" : "screen",
+        "description" : "화면 1대 기본료",
+        "quantity" : 1,
+        "amountWon" : 9900,
+        "unitWon" : 9900,
+        "basisDays" : [ "d-1 2026-10-01", "d-1 2026-10-02" ]
+      }, {
+        "kind" : "usage_tier",
+        "description" : "재생 0~100시간 구간",
+        "quantity" : 5400,
+        "amountWon" : 150,
+        "unitWon" : 100,
+        "basisDays" : [ "d-1 2026-10-01", "d-1 2026-10-02" ]
+      } ],
+      "usage" : [ {
+        "deviceId" : "d-1",
+        "day" : "2026-10-01",
+        "billedSeconds" : 1800,
+        "recordIds" : [ 1 ]
+      }, {
+        "deviceId" : "d-1",
+        "day" : "2026-10-02",
+        "billedSeconds" : 3600,
+        "recordIds" : [ 1, 2, 3 ]
+      } ]
+    } ]
+  }, {
+    "name" : "late-record-adjustment",
+    "note" : "10월 마감 뒤(11/3)에 10월 기록 2건이 도착. 10월 정산서는 그대로 두고 11월 정산서에 차액을 조정 항목으로 넣는다",
+    "plan" : {
+      "screenFeeWon" : 9900,
+      "tiers" : [ {
+        "upToHours" : 100,
+        "rateWonPerHour" : 100
+      }, {
+        "upToHours" : 300,
+        "rateWonPerHour" : 80
+      }, {
+        "upToHours" : null,
+        "rateWonPerHour" : 60
+      } ]
+    },
+    "records" : [ {
+      "id" : 1,
+      "deviceId" : "d-1",
+      "start" : "2026-10-10 12:00",
+      "end" : "2026-10-10 13:00",
+      "receivedAt" : "2026-10-10 13:00",
+      "seconds" : 3600
+    }, {
+      "id" : 2,
+      "deviceId" : "d-1",
+      "start" : "2026-10-20 12:00",
+      "end" : "2026-10-20 14:00",
+      "receivedAt" : "2026-11-03 09:00",
+      "seconds" : 7200
+    }, {
+      "id" : 3,
+      "deviceId" : "d-2",
+      "start" : "2026-10-25 12:00",
+      "end" : "2026-10-25 12:30",
+      "receivedAt" : "2026-11-03 09:00",
+      "seconds" : 1800
+    }, {
+      "id" : 4,
+      "deviceId" : "d-1",
+      "start" : "2026-11-05 12:00",
+      "end" : "2026-11-05 13:00",
+      "receivedAt" : "2026-11-05 13:00",
+      "seconds" : 3600
+    } ],
+    "steps" : [ {
+      "op" : "close",
+      "month" : "2026-10",
+      "at" : "2026-11-01 00:00",
+      "totalWon" : 10000,
+      "lines" : [ {
+        "kind" : "screen",
+        "description" : "화면 1대 기본료",
+        "quantity" : 1,
+        "amountWon" : 9900,
+        "unitWon" : 9900,
+        "basisDays" : [ "d-1 2026-10-10" ]
+      }, {
+        "kind" : "usage_tier",
+        "description" : "재생 0~100시간 구간",
+        "quantity" : 3600,
+        "amountWon" : 100,
+        "unitWon" : 100,
+        "basisDays" : [ "d-1 2026-10-10" ]
+      } ],
+      "usage" : [ {
+        "deviceId" : "d-1",
+        "day" : "2026-10-10",
+        "billedSeconds" : 3600,
+        "recordIds" : [ 1 ]
+      } ]
+    }, {
+      "op" : "close",
+      "month" : "2026-11",
+      "at" : "2026-12-01 00:00",
+      "totalWon" : 20150,
+      "lines" : [ {
+        "kind" : "screen",
+        "description" : "화면 1대 기본료",
+        "quantity" : 1,
+        "amountWon" : 9900,
+        "unitWon" : 9900,
+        "basisDays" : [ "d-1 2026-11-05" ]
+      }, {
+        "kind" : "usage_tier",
+        "description" : "재생 0~100시간 구간",
+        "quantity" : 3600,
+        "amountWon" : 100,
+        "unitWon" : 100,
+        "basisDays" : [ "d-1 2026-11-05" ]
+      }, {
+        "kind" : "adjustment",
+        "description" : "2026-10 마감 후 도착한 기록 2건 반영",
+        "quantity" : 2,
+        "amountWon" : 10150,
+        "unitWon" : null,
+        "adjustsMonth" : "2026-10",
+        "basisDays" : [ "d-1 2026-10-20", "d-2 2026-10-25" ]
+      } ],
+      "usage" : [ {
+        "deviceId" : "d-1",
+        "day" : "2026-10-20",
+        "billedSeconds" : 7200,
+        "recordIds" : [ 2 ]
+      }, {
+        "deviceId" : "d-1",
+        "day" : "2026-11-05",
+        "billedSeconds" : 3600,
+        "recordIds" : [ 4 ]
+      }, {
+        "deviceId" : "d-2",
+        "day" : "2026-10-25",
+        "billedSeconds" : 1800,
+        "recordIds" : [ 3 ]
+      } ]
+    }, {
+      "op" : "preview",
+      "month" : "2026-12",
+      "at" : "2026-12-02 00:00",
+      "totalWon" : 0,
+      "lines" : [ ],
+      "usage" : [ ]
+    } ]
+  } ]
+}

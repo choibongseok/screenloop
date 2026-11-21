@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-11-21T14:05:29.608Z",
+  "rows": [
+    {
+      "kind": "단위",
+      "label": "동기화 핵심(sync-core): 이벤트 적용·충돌 규칙·시계 보정·재생 기록 대기열·클라이언트·플레이어 엔진, 속성 기반 시험, 명세 벡터",
+      "passed": 45,
+      "failed": 0
+    },
+    {
+      "kind": "단위",
+      "label": "웹 입력 검사와 안내 문구",
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "kind": "단위",
+      "label": "서버 도메인(Kotlin): 같은 벡터로 판정·기록 기준·정산 계산",
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "kind": "계약",
+      "label": "서버 응답이 OpenAPI 명세와 같은지(모든 작업 호출, 오류 응답 포함)",
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "kind": "통합",
+      "label": "실제 PostgreSQL·Redis: 명령 순서·SSE·멱등 수집·월 마감·마이그레이션 되돌리기",
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "kind": "e2e",
+      "label": "compose 전체 구성 + Playwright: 운영 웹 조작, 플레이어 두 대, 끊김, 정산, 배포 되돌리기",
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "kind": "브라우저",
+      "label": "데모 사이트(실제 Chrome): 고장 내기 시나리오·정산 패널·설명 따라가기",
+      "passed": 13,
+      "failed": 0
+    }
+  ]
+}
