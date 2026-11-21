@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { PlayerEngine } from './engine';
+import { PlayerEngine } from '@screenloop/sync-core';
 import { SceneCache } from './sceneCache';
 import { browserTransport, postRecords } from './transport';
 
@@ -63,6 +63,8 @@ export function App() {
       version: engine.client.confirmed?.version ?? null,
       itemId: np?.item.id ?? null,
       itemTitle: np?.item.title ?? null,
+      offsetInItemMs: np?.offsetInItemMs ?? null,
+      itemDurationMs: np ? np.item.durationSec * 1000 : null,
       paused: state?.playback.paused ?? null,
       volume: state?.volume ?? null,
       override: override ? state?.override?.text ?? null : null,

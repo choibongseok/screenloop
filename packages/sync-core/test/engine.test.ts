@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DeviceAuthority, RecordLedger, type Command, type StateEvent, type Transport } from '@screenloop/sync-core';
-import { PlayerEngine } from '../src/engine';
+import { DeviceAuthority, PlayerEngine, RecordLedger, type Command, type StateEvent, type Transport } from '../src/index';
 
 const T0 = Date.UTC(2026, 10, 21, 0, 0, 0);
 let n = 0;

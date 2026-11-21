@@ -1,0 +1,22 @@
+# 모듈별 담당자 표(가상의 역할 이름). 경로마다 주담당과 대응 가능한 사람을 합쳐 2명 이상을 둔다.
+# `# feature:` 줄은 기능과 그 기능이 걸치는 경로다. 기능마다 담당자가 서로 다른 2명 이상이어야 한다(scripts/check-owners.mjs).
+#
+# feature: 화면 상태 동기화 = packages/sync-core spec server
+# feature: 재생 기록 수집·정산 = server spec
+# feature: 운영 웹 = apps/web packages/sync-core
+# feature: 플레이어 = apps/player packages/scenes packages/sync-core
+# feature: 배포·복구 = scripts db compose.yml
+# feature: 데모 사이트 = web-demo packages/sync-core
+
+/packages/sync-core/   @role-sync-lead @role-web-lead
+/packages/scenes/      @role-web-lead @role-player-lead
+/apps/web/             @role-web-lead @role-player-lead
+/apps/player/          @role-player-lead @role-sync-lead
+/server/               @role-server-lead @role-sync-lead
+/spec/                 @role-server-lead @role-web-lead
+/db/                   @role-server-lead @role-release-lead
+/scripts/              @role-release-lead @role-server-lead
+/e2e/                  @role-release-lead @role-web-lead
+/web-demo/             @role-web-lead @role-sync-lead
+/compose.yml           @role-release-lead @role-server-lead
+/docs/                 @role-release-lead @role-sync-lead

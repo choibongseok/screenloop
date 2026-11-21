@@ -1,0 +1,74 @@
+# 로컬 실행용 전체 구성. 호스트 포트는 다른 프로젝트와 겹치지 않게 596xx 대역을 쓴다.
+name: screenloop
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: screenloop
+      POSTGRES_USER: screenloop
+      POSTGRES_PASSWORD: screenloop
+    ports: ["59632:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U screenloop -d screenloop"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    ports: ["59679:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  server:
+    image: screenloop-server:${SCREENLOOP_VERSION:-dev}
+    build: ./server
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      SPRING_DATASOURCE_URL: ${SCREENLOOP_DB_URL:-jdbc:postgresql://postgres:5432/screenloop}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SCREENLOOP_VERSION: ${SCREENLOOP_VERSION:-dev}
+    ports: ["59680:8080"]
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q 200 <&3'"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+      start_period: 10s
+
+  web:
+    image: screenloop-web:${SCREENLOOP_VERSION:-dev}
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      server: { condition: service_healthy }
+    environment:
+      SERVER_URL: http://server:8080
+    ports: ["59681:3000"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/login || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+
+  player:
+    image: screenloop-player:${SCREENLOOP_VERSION:-dev}
+    build:
+      context: .
+      dockerfile: apps/player/Dockerfile
+    depends_on:
+      server: { condition: service_healthy }
+    ports: ["59682:80"]
+
+volumes:
+  pgdata:

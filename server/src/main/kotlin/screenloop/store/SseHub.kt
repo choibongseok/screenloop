@@ -78,7 +78,7 @@ class SseHub(private val repo: DeviceRepo, private val mapper: ObjectMapper, pri
     private fun beat() {
         for ((deviceId, list) in conns) {
             for (c in list) {
-                try { c.emitter.send(SseEmitter.event().comment("hb")) } catch (e: Exception) { c.emitter.completeWithError(e) }
+                try { c.emitter.send(SseEmitter.event().name("hb").data("hb")) } catch (e: Exception) { c.emitter.completeWithError(e) }
             }
             if (list.any { it.isDevice }) repo.touch(deviceId, clock.millis())
         }

@@ -6,3 +6,5 @@ export * from './replica';
 export * from './clock';
 export * from './records';
 export * from './client';
+export * from './sse';
+export * from './engine';

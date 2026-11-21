@@ -86,7 +86,7 @@ class CommandIT : IntegrationBase() {
         assertEquals("connected", awaitLine(lines) { it.startsWith(":") }.removePrefix(":").trim())
         val sent = call("POST", "/api/devices/d-001/commands", operator, cmd("volume.set", "volume" to (30 + (System.nanoTime() % 40).toInt()))).body!!
         if (sent["result"].asText() == "accepted") {
-            val data = awaitLine(lines) { it.startsWith("data:") }
+            val data = awaitLine(lines) { it.startsWith("data:{") }
             assertEquals(sent["version"].asLong(), json.readTree(data.removePrefix("data:").trim())["version"].asLong())
         }
         future.cancel(true)
@@ -97,7 +97,7 @@ class CommandIT : IntegrationBase() {
         val replay = java.util.concurrent.LinkedBlockingQueue<String>()
         val req2 = HttpRequest.newBuilder(URI("http://127.0.0.1:$port/api/devices/d-001/stream")).header("Authorization", "Bearer $operator").header("Last-Event-ID", latest.toString()).build()
         val f2 = http.sendAsync(req2, HttpResponse.BodyHandlers.ofLines()).thenAccept { r -> r.body().forEach { replay.add(it) } }
-        val got = (1..2).map { json.readTree(awaitLine(replay) { it.startsWith("data:") }.removePrefix("data:").trim())["type"].asText() }
+        val got = (1..2).map { json.readTree(awaitLine(replay) { it.startsWith("data:{") }.removePrefix("data:").trim())["type"].asText() }
         f2.cancel(true)
         assertEquals(listOf("override.set", "override.cleared"), got)
     }

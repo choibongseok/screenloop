@@ -1,7 +1,6 @@
-import {
-  DeviceClient, PlayTracker, RecordQueue,
-  type ClientOptions, type KeyValueStore, type PlayRecordBatch, type PlayRecordResult, type Transport,
-} from '@screenloop/sync-core';
+import { DeviceClient, type ClientOptions, type Transport } from './client';
+import { PlayTracker, RecordQueue, type KeyValueStore } from './records';
+import type { PlayRecordBatch, PlayRecordResult } from './types';
 
 export interface EngineDeps {
   transport: Transport;
@@ -12,6 +11,7 @@ export interface EngineDeps {
   /** 기기 시계(ms). 시계가 틀린 기기를 흉내 낼 때 바꿔 끼운다. */
   now?: () => number;
   flushMs?: number;
+  onTrace?: ClientOptions['onTrace'];
   setTimer?: ClientOptions['setTimer'];
   clearTimer?: ClientOptions['clearTimer'];
 }
@@ -42,7 +42,7 @@ export class PlayerEngine {
     this.now = deps.now ?? (() => Date.now());
     this.setTimer = deps.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
     this.clearTimer = deps.clearTimer ?? ((t) => clearTimeout(t as ReturnType<typeof setTimeout>));
-    this.client = new DeviceClient(deps.transport, { now: this.now, setTimer: this.setTimer, clearTimer: this.clearTimer });
+    this.client = new DeviceClient(deps.transport, { now: this.now, setTimer: this.setTimer, clearTimer: this.clearTimer, onTrace: deps.onTrace });
     this.queue = new RecordQueue(deps.store, `sl_queue_${deps.deviceId}`);
     this.tracker = new PlayTracker((itemId, s, e) => this.queue.append(itemId, s, e));
   }

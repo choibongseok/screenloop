@@ -21,7 +21,14 @@ export interface ClientOptions {
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (t: unknown) => void;
   backoffMs?: number[];
+  /** 동기화 과정을 알리는 콜백(데모 사이트의 전달 기록 표시용) */
+  onTrace?: (t: SyncTrace) => void;
 }
+
+export type SyncTrace =
+  | { kind: 'applied' | 'duplicate' | 'buffered'; version: number }
+  | { kind: 'snapshot'; from: number; to: number; why: 'start' | 'gap' | 'reconnect' }
+  | { kind: 'offline' };
 
 interface Pending {
   id: string;
@@ -50,6 +57,7 @@ export class DeviceClient {
   private readonly setTimer: (fn: () => void, ms: number) => unknown;
   private readonly clearTimer: (t: unknown) => void;
   private readonly backoff: number[];
+  private readonly trace: (t: SyncTrace) => void;
   connection: Connection = 'connecting';
   readonly stats = { snapshots: 0, reconnects: 0, rejected: 0 };
 
@@ -58,6 +66,7 @@ export class DeviceClient {
     this.setTimer = opts.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
     this.clearTimer = opts.clearTimer ?? ((t) => clearTimeout(t as ReturnType<typeof setTimeout>));
     this.backoff = opts.backoffMs ?? [500, 1000, 2000, 4000];
+    this.trace = opts.onTrace ?? (() => undefined);
   }
 
   subscribe(fn: () => void): () => void {
@@ -126,14 +135,16 @@ export class DeviceClient {
     if (this.gapTimer) this.clearTimer(this.gapTimer);
   }
 
-  private async syncSnapshot(): Promise<void> {
+  private async syncSnapshot(why: 'start' | 'gap' | 'reconnect'): Promise<void> {
     const t0 = this.now();
     const snap = await this.transport.fetchSnapshot();
     const t1 = this.now();
     this.clock.addSample(t0, snap.serverTimeMs, t1);
     this.stats.snapshots++;
+    const from = this.replica?.version ?? -1;
     if (this.replica) this.replica.applySnapshot(snap.state);
     else this.replica = new Replica(snap.state);
+    this.trace({ kind: 'snapshot', from, to: this.replica.version, why });
   }
 
   /** g 는 start 때 매긴 번호. stop 이나 다시 start 가 있었으면 번호가 달라져서 늦게 도착한 이전 연결 시도는 버린다. */
@@ -141,7 +152,7 @@ export class DeviceClient {
     this.connection = this.replica ? 'offline' : 'connecting';
     this.closeStream?.();
     try {
-      await this.syncSnapshot();
+      await this.syncSnapshot(this.replica ? 'reconnect' : 'start');
     } catch {
       if (g === this.gen) this.scheduleRetry();
       return;
@@ -157,6 +168,7 @@ export class DeviceClient {
 
   private scheduleRetry(): void {
     this.connection = 'offline';
+    this.trace({ kind: 'offline' });
     this.emit();
     if (this.stopped) return;
     const wait = this.backoff[Math.min(this.attempt++, this.backoff.length - 1)]!;
@@ -166,13 +178,14 @@ export class DeviceClient {
 
   private onEvent(ev: StateEvent): void {
     if (!this.replica) return;
-    this.replica.receive(ev);
+    const r = this.replica.receive(ev);
+    this.trace({ kind: r, version: ev.version });
     if (this.replica.hasGap && !this.gapTimer) {
       // 순서가 뒤바뀐 이벤트가 곧 올 수 있어 잠깐 기다린 뒤에도 비어 있으면 스냅샷을 받는다
       this.gapTimer = this.setTimer(async () => {
         this.gapTimer = null;
         if (this.replica?.hasGap) {
-          try { await this.syncSnapshot(); } catch { /* 다음 이벤트나 재연결 때 다시 시도 */ }
+          try { await this.syncSnapshot('gap'); } catch { /* 다음 이벤트나 재연결 때 다시 시도 */ }
           this.emit();
         }
       }, 150);

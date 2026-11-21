@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
-import { DeviceClient, type Command, type CommandResult, type DeviceState, type Snapshot, type StateEvent, type Transport } from '@screenloop/sync-core';
+import { DeviceClient, openEventStream, type Command, type CommandResult, type DeviceState, type Snapshot, type Transport } from '@screenloop/sync-core';
 import { sendCommand } from './actions';
 
 /** 브라우저용 전송 계층: 스냅샷은 /api/snapshot, 스트림은 /api/stream(둘 다 이 웹 앱의 프록시), 조작은 서버 액션 */
@@ -11,13 +11,7 @@ function browserTransport(deviceId: string, canSend: boolean): Transport {
       if (!r.ok) throw new Error(`snapshot ${r.status}`);
       return (await r.json()) as Snapshot;
     },
-    open(after, h) {
-      const es = new EventSource(`/api/stream/${deviceId}?after=${after}`);
-      es.onopen = () => h.onOpen();
-      es.addEventListener('state', (m) => h.onEvent(JSON.parse((m as MessageEvent).data) as StateEvent));
-      es.onerror = () => { es.close(); h.onError(); };
-      return () => es.close();
-    },
+    open: (after, h) => openEventStream(`/api/stream/${deviceId}?after=${after}`, h),
     sendCommand: canSend
       ? async (cmd: Command): Promise<CommandResult> => {
           const r = await sendCommand(deviceId, cmd);

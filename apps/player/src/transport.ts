@@ -1,4 +1,4 @@
-import type { PlayRecordBatch, PlayRecordResult, Snapshot, StateEvent, Transport } from '@screenloop/sync-core';
+import { openEventStream, type PlayRecordBatch, type PlayRecordResult, type Snapshot, type Transport } from '@screenloop/sync-core';
 
 export interface Cached {
   state: Snapshot['state'];
@@ -27,16 +27,7 @@ export function browserTransport(deviceId: string, key: string, store: Pick<Stor
         return { state: c.state, serverTimeMs: Math.round(now() + c.offsetMs) };
       }
     },
-    open(after, h) {
-      const es = new EventSource(`/api/devices/${deviceId}/stream?after=${after}&deviceKey=${encodeURIComponent(key)}`);
-      es.onopen = () => h.onOpen();
-      es.addEventListener('state', (m) => {
-        const ev = JSON.parse((m as MessageEvent).data) as StateEvent;
-        h.onEvent(ev);
-      });
-      es.onerror = () => { es.close(); h.onError(); };
-      return () => es.close();
-    },
+    open: (after, h) => openEventStream(`/api/devices/${deviceId}/stream?after=${after}&deviceKey=${encodeURIComponent(key)}`, h),
   };
 }
 

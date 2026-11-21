@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite --port 59682",
     "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@screenloop/scenes": "*",

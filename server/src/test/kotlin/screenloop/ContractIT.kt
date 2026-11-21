@@ -98,7 +98,7 @@ class ContractIT : IntegrationBase() {
         val f = http.sendAsync(req, HttpResponse.BodyHandlers.ofLines()).thenAccept { r -> r.body().forEach { q.add(it) } }
         var data: String? = null
         val end = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
-        while (data == null && System.nanoTime() < end) q.poll(200, TimeUnit.MILLISECONDS)?.takeIf { it.startsWith("data:") }?.let { data = it }
+        while (data == null && System.nanoTime() < end) q.poll(200, TimeUnit.MILLISECONDS)?.takeIf { it.startsWith("data:{") }?.let { data = it }
         f.cancel(true)
         assertEquals(emptyList<String>(), OpenApi.errors("StateEvent", json.readTree(data!!.removePrefix("data:").trim())))
         covered.add("GET /api/devices/{deviceId}/stream")

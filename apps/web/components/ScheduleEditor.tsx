@@ -23,6 +23,7 @@ export function ScheduleEditor({ deviceId, state, canOperate, onRun }: { deviceI
   const [dragOver, setDragOver] = useState<number | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [saving, setSaving] = useState(false);
+  const [focusTick, setFocusTick] = useState(0);
 
   // 편집 중이 아니면 서버의 최신 편성표를 따라간다
   useEffect(() => {
@@ -52,13 +53,17 @@ export function ScheduleEditor({ deviceId, state, canOperate, onRun }: { deviceI
     e.preventDefault();
     setShowErrors(true);
     if (invalid) {
-      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      setFocusTick((t) => t + 1); // 오류 표시가 그려진 뒤 첫 오류 입력으로 초점을 옮긴다
       return;
     }
     setSaving(true);
     await onRun({ type: 'schedule.replace', baseScheduleVersion: baseVersion, items: drafts.map(fromDraft) }, '편성표를 저장했습니다.');
     setSaving(false);
   }
+
+  useEffect(() => {
+    if (focusTick > 0) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [focusTick]);
 
   // 저장이 받아들여지면 서버 쪽 버전이 올라가므로, 그 값이 내가 보낸 내용과 같으면 편집 상태를 닫는다
   useEffect(() => {
@@ -124,9 +129,9 @@ export function ScheduleEditor({ deviceId, state, canOperate, onRun }: { deviceI
                     </>
                   )}
                   <span style={{ flex: 1 }} />
-                  <button type="button" className="btn small" disabled={dis || i === 0} aria-label={`${d.title || i + 1}번 항목 위로`} onClick={() => reorder(i, i - 1)}>↑</button>
-                  <button type="button" className="btn small" disabled={dis || i === drafts.length - 1} aria-label={`${d.title || i + 1}번 항목 아래로`} onClick={() => reorder(i, i + 1)}>↓</button>
-                  <button type="button" className="btn small danger" disabled={dis} aria-label={`${d.title || i + 1}번 항목 삭제`} onClick={() => { setDrafts((x) => x.filter((_, j) => j !== i)); setDirty(true); }}>삭제</button>
+                  <button type="button" className="btn small" disabled={dis || i === 0} aria-label={`${i + 1}번 항목(${d.title || '제목 없음'}) 위로`} onClick={() => reorder(i, i - 1)}>↑</button>
+                  <button type="button" className="btn small" disabled={dis || i === drafts.length - 1} aria-label={`${i + 1}번 항목(${d.title || '제목 없음'}) 아래로`} onClick={() => reorder(i, i + 1)}>↓</button>
+                  <button type="button" className="btn small danger" disabled={dis} aria-label={`${i + 1}번 항목(${d.title || '제목 없음'}) 삭제`} onClick={() => { setDrafts((x) => x.filter((_, j) => j !== i)); setDirty(true); }}>삭제</button>
                 </div>
               </li>
             );
