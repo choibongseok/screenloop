@@ -1,0 +1,465 @@
+{
+  "scenarios": [
+    {
+      "name": "tier-pricing",
+      "note": "121시간 = 100시간×100원 + 21시간×80원, 화면 2대 기본료",
+      "plan": {
+        "screenFeeWon": 9900,
+        "tiers": [
+          {
+            "upToHours": 100,
+            "rateWonPerHour": 100
+          },
+          {
+            "upToHours": 300,
+            "rateWonPerHour": 80
+          },
+          {
+            "upToHours": null,
+            "rateWonPerHour": 60
+          }
+        ]
+      },
+      "records": [
+        {
+          "id": 1,
+          "deviceId": "d-1",
+          "startMs": 1790780400000,
+          "endMs": 1790802000000,
+          "receivedAtMs": 1790802000000
+        },
+        {
+          "id": 2,
+          "deviceId": "d-1",
+          "startMs": 1790802000000,
+          "endMs": 1790823600000,
+          "receivedAtMs": 1790823600000
+        },
+        {
+          "id": 3,
+          "deviceId": "d-1",
+          "startMs": 1790823600000,
+          "endMs": 1790845200000,
+          "receivedAtMs": 1790845200000
+        },
+        {
+          "id": 4,
+          "deviceId": "d-1",
+          "startMs": 1790845200000,
+          "endMs": 1790866800000,
+          "receivedAtMs": 1790866800000
+        },
+        {
+          "id": 5,
+          "deviceId": "d-1",
+          "startMs": 1790866800000,
+          "endMs": 1790888400000,
+          "receivedAtMs": 1790888400000
+        },
+        {
+          "id": 6,
+          "deviceId": "d-1",
+          "startMs": 1790888400000,
+          "endMs": 1790910000000,
+          "receivedAtMs": 1790910000000
+        },
+        {
+          "id": 7,
+          "deviceId": "d-1",
+          "startMs": 1790910000000,
+          "endMs": 1790931600000,
+          "receivedAtMs": 1790931600000
+        },
+        {
+          "id": 8,
+          "deviceId": "d-1",
+          "startMs": 1790931600000,
+          "endMs": 1790953200000,
+          "receivedAtMs": 1790953200000
+        },
+        {
+          "id": 9,
+          "deviceId": "d-1",
+          "startMs": 1790953200000,
+          "endMs": 1790974800000,
+          "receivedAtMs": 1790974800000
+        },
+        {
+          "id": 10,
+          "deviceId": "d-1",
+          "startMs": 1790974800000,
+          "endMs": 1790996400000,
+          "receivedAtMs": 1790996400000
+        },
+        {
+          "id": 11,
+          "deviceId": "d-1",
+          "startMs": 1790996400000,
+          "endMs": 1791018000000,
+          "receivedAtMs": 1791018000000
+        },
+        {
+          "id": 12,
+          "deviceId": "d-1",
+          "startMs": 1791018000000,
+          "endMs": 1791039600000,
+          "receivedAtMs": 1791039600000
+        },
+        {
+          "id": 13,
+          "deviceId": "d-1",
+          "startMs": 1791039600000,
+          "endMs": 1791061200000,
+          "receivedAtMs": 1791061200000
+        },
+        {
+          "id": 14,
+          "deviceId": "d-1",
+          "startMs": 1791061200000,
+          "endMs": 1791082800000,
+          "receivedAtMs": 1791082800000
+        },
+        {
+          "id": 15,
+          "deviceId": "d-1",
+          "startMs": 1791082800000,
+          "endMs": 1791104400000,
+          "receivedAtMs": 1791104400000
+        },
+        {
+          "id": 16,
+          "deviceId": "d-1",
+          "startMs": 1791104400000,
+          "endMs": 1791126000000,
+          "receivedAtMs": 1791126000000
+        },
+        {
+          "id": 17,
+          "deviceId": "d-1",
+          "startMs": 1791126000000,
+          "endMs": 1791147600000,
+          "receivedAtMs": 1791147600000
+        },
+        {
+          "id": 18,
+          "deviceId": "d-1",
+          "startMs": 1791147600000,
+          "endMs": 1791169200000,
+          "receivedAtMs": 1791169200000
+        },
+        {
+          "id": 19,
+          "deviceId": "d-1",
+          "startMs": 1791169200000,
+          "endMs": 1791190800000,
+          "receivedAtMs": 1791190800000
+        },
+        {
+          "id": 20,
+          "deviceId": "d-1",
+          "startMs": 1791190800000,
+          "endMs": 1791212400000,
+          "receivedAtMs": 1791212400000
+        },
+        {
+          "id": 21,
+          "deviceId": "d-2",
+          "startMs": 1790989200000,
+          "endMs": 1790992800000,
+          "receivedAtMs": 1790992800000
+        }
+      ],
+      "steps": [
+        {
+          "op": "close",
+          "month": "2026-10",
+          "nowMs": 1793458800000,
+          "expectLines": [
+            {
+              "kind": "screen",
+              "quantity": 2,
+              "unitWon": 9900,
+              "amountWon": 19800
+            },
+            {
+              "kind": "usage_tier",
+              "quantity": 360000,
+              "unitWon": 100,
+              "amountWon": 10000
+            },
+            {
+              "kind": "usage_tier",
+              "quantity": 75600,
+              "unitWon": 80,
+              "amountWon": 1680
+            }
+          ],
+          "expectTotalWon": 31480,
+          "expectUsage": [
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-01",
+              "billedSeconds": 86400
+            },
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-02",
+              "billedSeconds": 86400
+            },
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-03",
+              "billedSeconds": 86400
+            },
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-04",
+              "billedSeconds": 86400
+            },
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-05",
+              "billedSeconds": 86400
+            },
+            {
+              "deviceId": "d-2",
+              "day": "2026-10-03",
+              "billedSeconds": 3600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "overlap-and-midnight",
+      "note": "겹친 구간은 한 번만 센다. 자정을 넘는 기록은 날짜별로 나눈다. 길이가 없는 기록은 무시",
+      "plan": {
+        "screenFeeWon": 9900,
+        "tiers": [
+          {
+            "upToHours": 100,
+            "rateWonPerHour": 100
+          },
+          {
+            "upToHours": 300,
+            "rateWonPerHour": 80
+          },
+          {
+            "upToHours": null,
+            "rateWonPerHour": 60
+          }
+        ]
+      },
+      "records": [
+        {
+          "id": 1,
+          "deviceId": "d-1",
+          "startMs": 1790865000000,
+          "endMs": 1790868600000,
+          "receivedAtMs": 1790868600000
+        },
+        {
+          "id": 2,
+          "deviceId": "d-1",
+          "startMs": 1790867400000,
+          "endMs": 1790869200000,
+          "receivedAtMs": 1790869200000
+        },
+        {
+          "id": 3,
+          "deviceId": "d-1",
+          "startMs": 1790868000000,
+          "endMs": 1790870400000,
+          "receivedAtMs": 1790870400000
+        },
+        {
+          "id": 4,
+          "deviceId": "d-1",
+          "startMs": 1790884800000,
+          "endMs": 1790881200000,
+          "receivedAtMs": 1790881200000
+        }
+      ],
+      "steps": [
+        {
+          "op": "close",
+          "month": "2026-10",
+          "nowMs": 1793458800000,
+          "expectLines": [
+            {
+              "kind": "screen",
+              "quantity": 1,
+              "unitWon": 9900,
+              "amountWon": 9900
+            },
+            {
+              "kind": "usage_tier",
+              "quantity": 5400,
+              "unitWon": 100,
+              "amountWon": 150
+            }
+          ],
+          "expectTotalWon": 10050,
+          "expectUsage": [
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-01",
+              "billedSeconds": 1800,
+              "recordIds": [
+                1
+              ]
+            },
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-02",
+              "billedSeconds": 3600,
+              "recordIds": [
+                1,
+                2,
+                3
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "late-record-adjustment",
+      "note": "10월 마감 뒤(11/3)에 10월 기록 2건이 도착. 10월 정산서는 그대로 두고 11월 정산서에 차액을 조정 항목으로 넣는다",
+      "plan": {
+        "screenFeeWon": 9900,
+        "tiers": [
+          {
+            "upToHours": 100,
+            "rateWonPerHour": 100
+          },
+          {
+            "upToHours": 300,
+            "rateWonPerHour": 80
+          },
+          {
+            "upToHours": null,
+            "rateWonPerHour": 60
+          }
+        ]
+      },
+      "records": [
+        {
+          "id": 1,
+          "deviceId": "d-1",
+          "startMs": 1791601200000,
+          "endMs": 1791604800000,
+          "receivedAtMs": 1791604800000
+        },
+        {
+          "id": 2,
+          "deviceId": "d-1",
+          "startMs": 1792465200000,
+          "endMs": 1792472400000,
+          "receivedAtMs": 1793664000000
+        },
+        {
+          "id": 3,
+          "deviceId": "d-2",
+          "startMs": 1792897200000,
+          "endMs": 1792899000000,
+          "receivedAtMs": 1793664000000
+        },
+        {
+          "id": 4,
+          "deviceId": "d-1",
+          "startMs": 1793847600000,
+          "endMs": 1793851200000,
+          "receivedAtMs": 1793851200000
+        }
+      ],
+      "steps": [
+        {
+          "op": "close",
+          "month": "2026-10",
+          "nowMs": 1793458800000,
+          "expectLines": [
+            {
+              "kind": "screen",
+              "quantity": 1,
+              "unitWon": 9900,
+              "amountWon": 9900
+            },
+            {
+              "kind": "usage_tier",
+              "quantity": 3600,
+              "unitWon": 100,
+              "amountWon": 100
+            }
+          ],
+          "expectTotalWon": 10000,
+          "expectUsage": [
+            {
+              "deviceId": "d-1",
+              "day": "2026-10-10",
+              "billedSeconds": 3600,
+              "recordIds": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "op": "close",
+          "month": "2026-11",
+          "nowMs": 1796050800000,
+          "expectLines": [
+            {
+              "kind": "screen",
+              "quantity": 1,
+              "unitWon": 9900,
+              "amountWon": 9900
+            },
+            {
+              "kind": "usage_tier",
+              "quantity": 3600,
+              "unitWon": 100,
+              "amountWon": 100
+            },
+            {
+              "kind": "adjustment",
+              "quantity": 2,
+              "unitWon": null,
+              "amountWon": 10150,
+              "adjustsMonth": "2026-10",
+              "basisDays": [
+                {
+                  "deviceId": "d-1",
+                  "day": "2026-10-20"
+                },
+                {
+                  "deviceId": "d-2",
+                  "day": "2026-10-25"
+                }
+              ]
+            }
+          ],
+          "expectTotalWon": 20150,
+          "expectUsage": [
+            {
+              "deviceId": "d-1",
+              "day": "2026-11-05",
+              "billedSeconds": 3600,
+              "recordIds": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "op": "preview",
+          "month": "2026-12",
+          "nowMs": 1796137200000,
+          "expectLines": [],
+          "expectTotalWon": 0,
+          "expectUsage": []
+        }
+      ]
+    }
+  ]
+}
