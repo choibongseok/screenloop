@@ -28,7 +28,7 @@ test('첫 화면: 제목·문단·실행 범위 표시, 기기 네 대가 같은
   await expect(page.locator('.lead')).toContainText('매장 TV 에 영상을 편성해 내보내는 서비스를 만들었습니다');
   await expect(page.locator('.lead')).toContainText('재생 기록으로 월 요금을 계산합니다');
   await expect(page.locator('.lead')).not.toContainText('Kotlin');
-  await expect(page.locator('#banner')).toContainText('서버 없이 브라우저에서 도는 모의 실행');
+  await expect(page.locator('#banner')).toContainText('제품에 들어가는 코드를 이 화면에서 그대로 돌립니다');
   await expect(page.locator('#banner')).toContainText('실제 서버와 같은 Kotlin 코드');
   await allSame(page);
   await expect(page.locator('#verdict-title')).toHaveText('4대 모두 같은 화면을 보고 있습니다');
