@@ -30,15 +30,15 @@ const sum = (...xs) => ({ passed: xs.reduce((n, x) => n + x.passed, 0), failed: 
 const rows = [
   {
     kind: '단위',
-    label: '동기화 핵심(sync-core): 이벤트 적용·충돌 규칙·시계 보정·재생 기록 대기열·클라이언트·플레이어 엔진, 속성 기반 시험, 명세 벡터',
+    label: '동기화 코드: 변경 알림 적용, 동시 조작 규칙, 시계 보정, 재생 기록 쌓기, 무작위 순서 시험',
     ...vitest('.test-results/sync-core.json'),
   },
-  { kind: '단위', label: '웹 입력 검사와 안내 문구', ...vitest('.test-results/web.json') },
-  { kind: '단위', label: '서버 도메인(Kotlin): 같은 벡터로 판정·기록 기준·정산 계산', ...junit(/VectorsTest|BillingEvidence/) },
-  { kind: '계약', label: '서버 응답이 OpenAPI 명세와 같은지(모든 작업 호출, 오류 응답 포함)', ...junit(/ContractIT/) },
-  { kind: '통합', label: '실제 PostgreSQL·Redis: 명령 순서·SSE·멱등 수집·월 마감·마이그레이션 되돌리기', ...junit(/CommandIT|RecordsAndBillingIT|MigrationTest/) },
-  { kind: 'e2e', label: 'compose 전체 구성 + Playwright: 운영 웹 조작, 플레이어 두 대, 끊김, 정산, 배포 되돌리기', ...pw('.test-results/e2e.json') },
-  { kind: '브라우저', label: '데모 사이트(실제 Chrome): 고장 내기 시나리오·정산 패널·설명 따라가기', ...pw('.test-results/demo.json') },
+  { kind: '단위', label: '운영 웹의 입력 검사와 안내 문구', ...vitest('.test-results/web.json') },
+  { kind: '단위', label: '서버 규칙(Kotlin): 같은 시험 값으로 판정, 기록 기준, 요금 계산', ...junit(/VectorsTest|BillingEvidence/) },
+  { kind: '계약', label: '서버 응답이 API 설계 문서와 같은지(모든 API 호출, 오류 응답 포함)', ...junit(/ContractIT/) },
+  { kind: '통합', label: '실제 PostgreSQL·Redis: 조작 순서, 실시간 알림, 중복 기록 거르기, 월 마감, DB 변경 되돌리기', ...junit(/CommandIT|RecordsAndBillingIT|MigrationTest/) },
+  { kind: 'e2e', label: '서버·웹·플레이어를 실제로 띄워 브라우저로 조작: 플레이어 두 대, 끊김, 요금, 배포 되돌리기', ...pw('.test-results/e2e.json') },
+  { kind: '브라우저', label: '이 데모 사이트(실제 Chrome): 고장 내기, 요금 패널, 설명 따라가기', ...pw('.test-results/demo.json') },
 ];
 mkdirSync('docs/evidence', { recursive: true });
 writeFileSync('docs/evidence/test-results.json', JSON.stringify({ generatedAt: new Date().toISOString(), rows }, null, 2) + '\n');

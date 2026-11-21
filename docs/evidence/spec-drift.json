@@ -1,28 +1,28 @@
 {
   "blocks": [
     {
-      "title": "명세만 바꾸면: 생성물 검사가 막는다",
-      "change": "Snapshot 의 serverTimeMs 를 serverClockMs 로 바꿈(코드는 그대로)",
+      "title": "문서만 바꾸면: 문서에서 만든 파일 검사가 막는다",
+      "change": "API 문서에서 서버 시각 필드 이름 serverTimeMs 를 serverClockMs 로 바꿈(코드는 그대로)",
       "where": "spec/openapi.yaml",
       "command": "node scripts/spec-export.mjs --check",
       "exitCode": 1,
       "excerpt": "명세와 생성물이 어긋남:\n- spec/events.schema.json 이 openapi.yaml 과 다름 (npm run spec:export)\n- packages/sync-core/src/generated/openapi.ts 가 openapi.yaml 과 다름 (npm run spec:export)"
     },
     {
-      "title": "명세만 바꾸면: 계약 테스트도 막는다",
-      "change": "같은 변경. 서버는 여전히 serverTimeMs 를 응답한다",
+      "title": "문서만 바꾸면: 서버 응답 검사도 막는다",
+      "change": "같은 변경. 서버는 여전히 serverTimeMs 로 응답한다",
       "where": "spec/openapi.yaml",
       "command": "gradlew :server:test --tests *ContractIT",
       "exitCode": 1,
-      "excerpt": "ContractIT > everyOperationResponseMatchesTheSpec() FAILED\norg.opentest4j.AssertionFailedError: GET /api/devices/{deviceId}/snapshot 응답이 명세(Snapshot)와 다름: {\"state\":{\"deviceId\":\"d-001\",\"version\":1,\"scheduleVersion\":1,\"schedule\":{\"items\":[{\"id\":\"welcome\",\"title\":\"환영 인사\",\"sceneId\":\"aurora\",\"\nContractIT > theValidatorRejectsPayloadsThatDifferFromTheSpec() FAILED\norg.opentest4j.AssertionFailedError: expected: <[]> but was: <[$: $: 필수 속성 'serverClockMs'을(를) 찾을 수 없습니다., $: $: 'serverTimeMs' 속성이 스키마에 정의되어 있지 않으며 스키마가 추가 속성을 허용하지 않습니다.]>\n> Task :server:test FAILED\nBUILD FAILED in 8s"
+      "excerpt": "ContractIT > everyOperationResponseMatchesTheSpec() FAILED\norg.opentest4j.AssertionFailedError: GET /api/devices/{deviceId}/snapshot 응답이 명세(Snapshot)와 다름: {\"state\":{\"deviceId\":\"d-001\",\"version\":1,\"scheduleVersion\":1,\"schedule\":{\"items\":[{\"id\":\"welcome\",\"title\":\"환영 인사\",\"sceneId\":\"aurora\",\"\nContractIT > theValidatorRejectsPayloadsThatDifferFromTheSpec() FAILED\norg.opentest4j.AssertionFailedError: expected: <[]> but was: <[$: $: 필수 속성 'serverClockMs'을(를) 찾을 수 없습니다., $: $: 'serverTimeMs' 속성이 스키마에 정의되어 있지 않으며 스키마가 추가 속성을 허용하지 않습니다.]>\n> Task :server:test FAILED\nBUILD FAILED in 6s"
     },
     {
-      "title": "코드만 바꾸면: 계약 테스트가 막는다",
-      "change": "서버 응답의 serverTimeMs 를 serverClock 으로 바꿈(명세는 그대로)",
+      "title": "코드만 바꾸면: 서버 응답 검사가 막는다",
+      "change": "서버 응답의 필드 이름 serverTimeMs 를 serverClock 으로 바꿈(API 문서는 그대로)",
       "where": "server/src/main/kotlin/screenloop/api/Api.kt",
       "command": "gradlew :server:test --tests *ContractIT",
       "exitCode": 1,
-      "excerpt": "ContractIT > everyOperationResponseMatchesTheSpec() FAILED\norg.opentest4j.AssertionFailedError: GET /api/devices/{deviceId}/snapshot 응답이 명세(Snapshot)와 다름: {\"state\":{\"deviceId\":\"d-001\",\"version\":1,\"scheduleVersion\":1,\"schedule\":{\"items\":[{\"id\":\"welcome\",\"title\":\"환영 인사\",\"sceneId\":\"aurora\",\"\n> Task :server:test FAILED\nBUILD FAILED in 8s"
+      "excerpt": "ContractIT > everyOperationResponseMatchesTheSpec() FAILED\norg.opentest4j.AssertionFailedError: GET /api/devices/{deviceId}/snapshot 응답이 명세(Snapshot)와 다름: {\"state\":{\"deviceId\":\"d-001\",\"version\":1,\"scheduleVersion\":1,\"schedule\":{\"items\":[{\"id\":\"welcome\",\"title\":\"환영 인사\",\"sceneId\":\"aurora\",\"\n> Task :server:test FAILED\nBUILD FAILED in 6s"
     }
   ]
 }

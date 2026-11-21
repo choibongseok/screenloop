@@ -1,8 +1,10 @@
 # Screenloop
 
-매장 화면(TV·PC 플레이어)의 상태를 운영 웹과 휴대폰 리모컨까지 같은 상태로 맞추는 동기화 코드(TypeScript)와, 화면이 남긴 재생 기록으로 월 요금을 정산하는 서버(Kotlin·Spring Boot)를 만든 데모입니다. 매장·콘텐츠·요금은 모두 예시 데이터입니다.
+매장 TV 에 영상을 편성해 내보내는 서비스의 데모입니다. 운영 화면, 휴대폰, TV, PC 가 같은 장면을 보게 맞추고, 재생 기록으로 월 요금을 계산합니다. 매장, 콘텐츠, 요금은 모두 예시 데이터입니다.
 
-**데모: https://choibongseok.github.io/screenloop/** — 기기 네 대를 일부러 고장 내 보는 페이지입니다(이벤트 순서 뒤바뀜·중복·누락, 연결 끊김, 기기 시계 차이, 동시 조작, 오프라인 재생 뒤 기록 전송).
+만든 것: 운영 웹·플레이어·동기화 코드는 TypeScript(Next.js, React), 서버는 Kotlin·Spring Boot, 저장은 PostgreSQL·Redis.
+
+**데모: https://choibongseok.github.io/screenloop/** — 기기 네 대의 연결을 끊거나 알림 순서를 뒤섞어 보고, 다시 맞춰지는지 확인하는 페이지입니다.
 
 ![데모 사이트(다크, 1440px)](docs/demo-desktop-dark.png)
 

@@ -109,7 +109,7 @@ export function buildDevices(ui: Ui): () => void {
       }
       for (const b of card.querySelectorAll<HTMLButtonElement>('.ctl button')) if (b !== pauseBtn) b.disabled = !online;
       const st = dev.client.replicaStats;
-      setText(foot, `v${dev.client.confirmed?.version ?? '–'} · 적용 ${st.applied} · 중복 버림 ${st.duplicates} · 보관 ${st.buffered} · 스냅샷 ${dev.client.stats.snapshots}`);
+      setText(foot, `#${dev.client.confirmed?.version ?? '–'} · 적용 ${st.applied} · 중복 버림 ${st.duplicates} · 보관 ${st.buffered} · 상태 받기 ${dev.client.stats.snapshots}`);
     });
   }
 
@@ -120,7 +120,7 @@ export function buildDevices(ui: Ui): () => void {
     const dev = ui.world.device(kind);
     const connBtn = el('button', { type: 'button', class: 'ghost2', 'aria-pressed': 'false', 'data-testid': `cut-${kind}` });
     connBtn.addEventListener('click', () => ui.setConnected(kind, !dev.channel.connected));
-    const recv = el('select', { 'aria-label': `${KIND_LABEL[kind]}가 받는 이벤트`, 'data-testid': `recv-${kind}` });
+    const recv = el('select', { 'aria-label': `${KIND_LABEL[kind]}가 받는 알림`, 'data-testid': `recv-${kind}` });
     for (const m of Object.keys(RECV_LABEL) as RecvMode[]) recv.append(el('option', { value: m, text: RECV_LABEL[m] }));
     recv.addEventListener('change', () => ui.setRecv(kind, recv.value as RecvMode));
     const skew = el('select', { 'aria-label': `${KIND_LABEL[kind]} 시계`, 'data-testid': `clock-${kind}` });
@@ -171,7 +171,7 @@ export function compare(world: World, since: Map<string, number>): { rows: Row[]
     const posDiff = np && sNp ? circ(np.loopPositionMs, sNp.loopPositionMs, sNp.loopLengthMs) : null;
     const notice = conf?.override && c.overrideActive() ? conf.override.text : '';
     const reasons: string[] = [];
-    if (!conf || conf.version !== S.version) reasons.push(`버전 ${conf?.version ?? '–'} (서버 ${S.version})`);
+    if (!conf || conf.version !== S.version) reasons.push(`상태 번호 ${conf?.version ?? '–'} (서버 ${S.version})`);
     if ((np?.item.id ?? '') !== (sNp?.item.id ?? '')) reasons.push('재생 항목이 다름');
     if (conf && conf.playback.paused !== S.playback.paused) reasons.push('일시정지 상태가 다름');
     if (conf && conf.volume !== S.volume) reasons.push('음량이 다름');
@@ -255,15 +255,15 @@ export function renderResult(world: World, since: Map<string, number>, ui: Ui): 
   } else if (syncing) {
     title = '맞추는 중입니다';
     ok = 'warn';
-    easy = '이벤트가 도착하거나 스냅샷을 받는 동안에는 잠깐 어긋나 보일 수 있습니다.';
+    easy = '알림이 도착하거나 현재 상태를 다시 받는 동안에는 잠깐 어긋나 보일 수 있습니다.';
   } else if (offline > 0) {
-    title = `연결된 ${live.length}대는 서버와 같은 상태입니다`;
+    title = `연결된 ${live.length}대는 같은 화면을 보고 있습니다`;
     ok = 'warn';
-    easy = `끊긴 ${offline}대는 마지막 상태로 계속 재생하고, 다시 연결되면 스냅샷으로 맞춥니다. 서버 버전 ${serverVersion}.`;
+    easy = `끊긴 ${offline}대는 마지막 상태로 계속 틀고 있고, 다시 연결되면 현재 상태를 받아 맞춥니다. 서버 상태 번호 ${serverVersion}.`;
   } else {
-    title = `${live.length}대 모두 서버와 같은 상태입니다`;
+    title = `${live.length}대 모두 같은 화면을 보고 있습니다`;
     ok = 'true';
-    easy = `서버 버전 ${serverVersion}. 재생 항목이 모두 같고, 재생 위치 차이는 최대 ${maxDiff}ms 입니다.`;
+    easy = `서버 상태 번호 ${serverVersion}. 재생 항목이 모두 같고, 재생 위치 차이는 최대 ${maxDiff}ms 입니다.`;
   }
   setText($('#verdict-title'), title);
   setText($('#verdict-easy'), easy);
@@ -284,7 +284,7 @@ export function renderLogs(world: World, cmdLog: LogLine[]): void {
   const traces = world.devices
     .flatMap((d) => d.trace.map((t) => ({ ...t })))
     .sort((a, b) => a.at - b.at)
-    .filter((t) => !/처음 스냅샷|시계 차이/.test(t.text))
+    .filter((t) => !/처음 상태|시계 차이/.test(t.text))
     .slice(-14);
   fill($('#trace-log'), traces, traces.map((t) => `${t.at}${t.who}${t.text}`).join('|'));
 }

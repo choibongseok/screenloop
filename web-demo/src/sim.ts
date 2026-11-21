@@ -264,18 +264,18 @@ export class World {
         trace.push({ at, who: label, text, tone });
         if (trace.length > 60) trace.shift();
       };
-      if (t.kind === 'applied') line(`v${t.version} 적용`, 'ok');
-      else if (t.kind === 'duplicate') line(`v${t.version} 중복이라 버림`, 'warn');
-      else if (t.kind === 'buffered') line(`v${t.version} 먼저 도착: 앞 버전을 기다리며 보관`, 'warn');
+      if (t.kind === 'applied') line(`#${t.version} 적용`, 'ok');
+      else if (t.kind === 'duplicate') line(`#${t.version} 이미 받아서 버림`, 'warn');
+      else if (t.kind === 'buffered') line(`#${t.version} 먼저 도착해서 보관(앞 번호 기다리는 중)`, 'warn');
       else if (t.kind === 'snapshot')
         line(
           t.why === 'gap'
-            ? `빠진 구간이 있어 스냅샷 재요청: v${t.from} → v${t.to}`
+            ? `빠진 번호가 있어 현재 상태를 다시 받음: #${t.from} → #${t.to}`
             : t.why === 'reconnect'
-              ? `다시 연결: 스냅샷으로 따라잡음 v${t.from} → v${t.to}`
+              ? `다시 연결해서 현재 상태를 받아 따라잡음: #${t.from} → #${t.to}`
               : t.why === 'clock'
                 ? '시계 차이를 다시 잼'
-                : `처음 스냅샷 받음 v${t.to}`,
+                : `처음 상태를 받음 #${t.to}`,
           t.why === 'gap' || t.why === 'reconnect' ? 'warn' : 'info',
         );
       else line('연결 끊김: 마지막 상태로 계속 재생', 'bad');

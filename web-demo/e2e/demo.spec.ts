@@ -23,11 +23,13 @@ test('첫 화면: 제목·문단·실행 범위 표시, 기기 네 대가 같은
   const errors = await open(page);
   await expect(page).toHaveTitle('매장 화면 동기화 모의 테스트 — Screenloop');
   await expect(page.locator('#h-hero')).toHaveText('매장 화면 동기화 모의 테스트');
-  await expect(page.locator('.lead')).toContainText('매장 화면 하나를 운영 웹, 휴대폰 리모컨, TV, PC 네 곳에서 같은 상태로 보게 하는 동기화 코드를 TypeScript 로 만들었고');
-  await expect(page.locator('#banner')).toContainText('가짜 서버');
-  await expect(page.locator('#banner')).toContainText('실행한 결과 파일');
+  await expect(page.locator('.lead')).toContainText('매장 TV 에 영상을 편성해 내보내는 서비스를 만들었습니다');
+  await expect(page.locator('.lead')).toContainText('재생 기록으로 월 요금을 계산합니다');
+  await expect(page.locator('.lead')).not.toContainText('Kotlin');
+  await expect(page.locator('#banner')).toContainText('서버 없이 브라우저에서 도는 모의 실행');
+  await expect(page.locator('#banner')).toContainText('미리 돌린 결과');
   await allSame(page);
-  await expect(page.locator('#verdict-title')).toHaveText('4대 모두 서버와 같은 상태입니다');
+  await expect(page.locator('#verdict-title')).toHaveText('4대 모두 같은 화면을 보고 있습니다');
   expect(errors).toEqual([]);
 });
 
@@ -45,8 +47,8 @@ test('이벤트 순서 뒤바뀜·중복: 기기가 보관·중복 버림을 하
   await page.getByTestId('recv-tv').selectOption('reorder');
   await page.getByTestId('recv-pc').selectOption('duplicate');
   await page.getByRole('button', { name: '운영 웹: 연속 조작 6번' }).click();
-  await expect(page.locator('#trace-log')).toContainText('앞 버전을 기다리며 보관', { timeout: 10_000 });
-  await expect(page.locator('#trace-log')).toContainText('중복이라 버림', { timeout: 10_000 });
+  await expect(page.locator('#trace-log')).toContainText('앞 번호 기다리는 중', { timeout: 10_000 });
+  await expect(page.locator('#trace-log')).toContainText('이미 받아서 버림', { timeout: 10_000 });
   await allSame(page);
   await expect(page.getByTestId('foot-pc')).toContainText(/중복 버림 [1-9]/);
 });
@@ -55,7 +57,7 @@ test('이벤트 누락: 빠진 구간을 알아채고 스냅샷을 다시 받아
   await open(page);
   await page.getByTestId('recv-pc').selectOption('drop');
   await page.getByRole('button', { name: '운영 웹: 연속 조작 6번' }).click();
-  await expect(page.locator('#trace-log')).toContainText('빠진 구간이 있어 스냅샷 재요청', { timeout: 10_000 });
+  await expect(page.locator('#trace-log')).toContainText('빠진 번호가 있어 현재 상태를 다시 받음', { timeout: 10_000 });
   await allSame(page);
 });
 
@@ -96,10 +98,10 @@ test('연결을 끊으면 끊김으로 표시하며 계속 재생하고, 다시 
   await page.getByTestId('web-pause').click();
   await expect(verdict(page, 'pc')).toHaveText('일치', { timeout: 10_000 });
   await expect(verdict(page, 'tv')).toHaveText('끊김');
-  await expect(page.locator('#verdict-title')).toContainText('연결된 3대는 서버와 같은 상태입니다');
+  await expect(page.locator('#verdict-title')).toContainText('연결된 3대는 같은 화면을 보고 있습니다');
   await page.getByTestId('cut-tv').click();
   await expect(verdict(page, 'tv')).toHaveText('일치', { timeout: 20_000 });
-  await expect(page.locator('#trace-log')).toContainText('스냅샷으로 따라잡음');
+  await expect(page.locator('#trace-log')).toContainText('현재 상태를 받아 따라잡음');
 });
 
 test('오프라인 재생 뒤 기록 몰아 보내기: 응답이 유실돼도 중복은 걸러지고 기록은 빠짐없이 모인다', async ({ page }) => {
@@ -161,7 +163,7 @@ test('설명 따라가기 3~4장은 고장을 실제로 일으켜 보관·스냅
   await expect(page.locator('#tour-prog')).toHaveText('3/8');
   await expect(page.locator('#trace-log')).toContainText('보관', { timeout: 10_000 });
   await page.locator('#tour-next').click();
-  await expect(page.locator('#trace-log')).toContainText('스냅샷 재요청', { timeout: 10_000 });
+  await expect(page.locator('#trace-log')).toContainText('현재 상태를 다시 받음', { timeout: 10_000 });
   await allSame(page);
 });
 

@@ -68,7 +68,7 @@ export async function initEvidence(): Promise<{ selectBilling(scn: string, step:
   const picker = $('#bill-picker');
   const renderBilling = () => {
     if (!billing) {
-      setText($('#bill-note'), '정산 실행 결과 파일(billing-run.json)을 읽지 못했습니다.');
+      setText($('#bill-note'), '요금 계산 결과 파일(billing-run.json)을 읽지 못했습니다.');
       return;
     }
     const scn = billing.scenarios[sel.scn]!;
@@ -109,7 +109,7 @@ export async function initEvidence(): Promise<{ selectBilling(scn: string, step:
     const tbody = $('#bill-lines tbody');
     const usageIndex = new Map<string, { billedSeconds: number; recordIds: number[] }>();
     for (const s of scn.steps) for (const u of s.usage) usageIndex.set(`${u.deviceId} ${u.day}`, u);
-    if (step.lines.length === 0) tbody.replaceChildren(el('tr', {}, el('td', { colspan: 5, text: '정산할 사용량이 없습니다.' })));
+    if (step.lines.length === 0) tbody.replaceChildren(el('tr', {}, el('td', { colspan: 5, text: '계산할 사용량이 없습니다.' })));
     else {
       const rows = step.lines.map((l, i) => {
         const tr = el(
@@ -162,7 +162,7 @@ export async function initEvidence(): Promise<{ selectBilling(scn: string, step:
   if (e2e) {
     setText(
       $('#e2e-bill-note'),
-      `compose 로 올린 실제 서버와 플레이어가 만든 재생 기록으로 ${e2e.month} 을 마감한 결과입니다. 합계 ${won(e2e.totalWon)}. 줄마다 연결된 일별 사용량과 원본 기록 수를 서버 API 로 거슬러 올라가 센 값입니다.`,
+      `실제로 띄운 서버와 플레이어가 만든 재생 기록으로 ${e2e.month} 을 마감한 결과입니다. 합계 ${won(e2e.totalWon)}. 오른쪽 두 칸은 줄마다 연결된 날짜별 사용량과 원본 기록의 수입니다.`,
     );
     $('#e2e-bill tbody').replaceChildren(
       ...e2e.lines.map((l) =>
@@ -178,7 +178,7 @@ export async function initEvidence(): Promise<{ selectBilling(scn: string, step:
         ),
       ),
     );
-  } else setText($('#e2e-bill-note'), 'e2e 결과 파일(e2e-billing.json)이 없습니다. make verify 로 만들어집니다.');
+  } else setText($('#e2e-bill-note'), '자동 시험 결과 파일(e2e-billing.json)이 없습니다. make verify 로 만들어집니다.');
 
   // 테스트
   if (tests) {
@@ -222,7 +222,7 @@ export async function initEvidence(): Promise<{ selectBilling(scn: string, step:
         ),
       ),
     );
-  else d.textContent = '명세 불일치 시험 결과 파일(spec-drift.json)이 없습니다.';
+  else d.textContent = '어긋남 시험 결과 파일(spec-drift.json)이 없습니다.';
 
   return {
     selectBilling(scn: string, step: number) {

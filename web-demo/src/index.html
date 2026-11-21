@@ -1,154 +1,267 @@
 <!doctype html>
 <html lang="ko" data-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>매장 화면 동기화 모의 테스트 — Screenloop</title>
-<meta name="description" content="매장 화면 하나를 운영 웹, 휴대폰 리모컨, TV, PC 에서 같은 상태로 보게 하는 동기화 코드와, 재생 기록으로 요금을 계산하는 서버를 만들었습니다. 기기를 일부러 고장 내 보고 다시 맞춰지는 과정을 눌러서 확인할 수 있습니다.">
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<a class="skiplink" href="#p-devices">본문으로 건너뛰기</a>
-<header class="top">
-  <div class="crumb"><span class="word">screenloop</span><span class="slash">/</span><span class="path">매장 화면 동기화·재생 기록 정산</span></div>
-  <p class="banner" id="banner" role="note"><strong>실행 범위</strong> 기기 네 대의 동기화 코드와 서버의 판정 규칙은 브라우저 안에서 도는 실제 TypeScript 코드입니다. 서버는 이 페이지 안의 가짜 서버입니다. 정산 계산은 Kotlin 서버 코드라 브라우저에서 돌리지 않고, 실제로 실행한 결과 파일을 읽어 옵니다.</p>
-  <button id="theme" class="ghost" type="button" aria-label="테마 전환(다크/라이트)">◐</button>
-</header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>매장 화면 동기화 모의 테스트 — Screenloop</title>
+    <meta
+      name="description"
+      content="매장 TV 에 영상을 편성해 내보내는 서비스를 만들었습니다. 운영 화면, 휴대폰, TV, PC 가 같은 장면을 보게 맞추고, 재생 기록으로 월 요금을 계산합니다. 연결을 끊거나 순서를 뒤섞어 보고 다시 맞춰지는지 확인할 수 있습니다."
+    />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skiplink" href="#p-devices">본문으로 건너뛰기</a>
+    <header class="top">
+      <div class="crumb"><span class="word">screenloop</span><span class="slash">/</span><span class="path">매장 화면 콘텐츠 운영</span></div>
+      <p class="banner" id="banner" role="note">
+        <strong>안내</strong> 서버 없이 브라우저에서 도는 모의 실행입니다. 기기들이 상태를 맞추는 규칙은 실제 제품과 같은 코드입니다. 요금 계산은 서버에서 미리 돌린 결과를 보여
+        줍니다.
+      </p>
+      <button id="theme" class="ghost" type="button" aria-label="테마 전환(다크/라이트)">◐</button>
+    </header>
 
-<main class="grid">
-  <section class="panel hero" id="p-hero" aria-labelledby="h-hero">
-    <h1 id="h-hero">매장 화면 동기화 모의 테스트</h1>
-    <p class="lead">매장 화면 하나를 운영 웹, 휴대폰 리모컨, TV, PC 네 곳에서 같은 상태로 보게 하는 동기화 코드를 TypeScript 로 만들었고, 화면이 남긴 재생 기록으로 월 요금을 계산하는 서버를 Kotlin·Spring Boot 로 만들었습니다. 아래에서 기기를 일부러 고장 내 보고, 다시 같은 상태로 맞춰지는지와 재생 기록이 몇 건 모였는지 확인할 수 있습니다.</p>
-    <p class="sub">매장·콘텐츠·요금은 모두 예시 데이터입니다. 화면의 장면은 직접 만든 SVG 입니다.</p>
-    <div class="hero-btns">
-      <button id="tour-start" class="primary" type="button">설명 따라가기</button>
-      <button id="tour-skip" class="ghost2" type="button">직접 해 보기</button>
-      <button id="reset" class="ghost2" type="button">처음 상태로</button>
-    </div>
-  </section>
+    <main class="grid">
+      <section class="panel hero" id="p-hero" aria-labelledby="h-hero">
+        <h1 id="h-hero">매장 화면 동기화 모의 테스트</h1>
+        <p class="lead">
+          매장 TV 에 영상을 편성해 내보내는 서비스를 만들었습니다. 운영 화면, 휴대폰, TV, PC 가 같은 장면을 보게 맞추고, 재생 기록으로 월 요금을 계산합니다. 아래에서 연결을 끊거나
+          순서를 뒤섞어 보고, 다시 맞춰지는지 확인할 수 있습니다.
+        </p>
+        <p class="sub">매장, 콘텐츠, 요금은 모두 예시 데이터입니다.</p>
+        <div class="hero-btns">
+          <button id="tour-start" class="primary" type="button">설명 따라가기</button>
+          <button id="tour-skip" class="ghost2" type="button">직접 해 보기</button>
+          <button id="reset" class="ghost2" type="button">처음 상태로</button>
+        </div>
+      </section>
 
-  <section class="panel devices" id="p-devices" aria-labelledby="h-dev">
-    <h2 id="h-dev" class="ptitle">기기 네 대 <span class="tag">같은 sync-core 코드</span></h2>
-    <div class="devgrid" id="devices"></div>
-  </section>
+      <section class="panel devices" id="p-devices" aria-labelledby="h-dev">
+        <h2 id="h-dev" class="ptitle">기기 네 대 <span class="tag">같은 동기화 코드</span></h2>
+        <div class="devgrid" id="devices"></div>
+      </section>
 
-  <section class="panel faults" id="p-faults" aria-labelledby="h-faults">
-    <h2 id="h-faults" class="ptitle">일부러 고장 내기</h2>
-    <p class="hint">기기마다 연결을 끊거나, 서버에서 오는 이벤트를 뒤바꾸고 중복·누락시키거나, 기기 시계를 틀리게 만들 수 있습니다.</p>
-    <div class="scroll">
-      <table id="fault-table">
-        <thead><tr><th>기기</th><th>연결</th><th>받는 이벤트</th><th>기기 시계</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <h3 class="sub-h">조작해 보기</h3>
-    <div class="actions" id="actions" role="group" aria-label="조작">
-      <button class="ghost2" type="button" data-act="web-next">운영 웹: 다음 항목</button>
-      <button class="ghost2" type="button" data-act="burst">운영 웹: 연속 조작 6번</button>
-      <button class="ghost2" type="button" data-act="race-next">두 사람이 동시에 '다음'</button>
-      <button class="ghost2" type="button" data-act="race-schedule">두 사람이 동시에 편성표 저장</button>
-      <button class="ghost2" type="button" data-act="race-volume">두 사람이 동시에 음량 변경</button>
-      <button class="ghost2" type="button" data-act="notice">운영 웹: 긴급 공지 20초</button>
-    </div>
-    <h3 class="sub-h">재생 기록</h3>
-    <div class="actions" role="group" aria-label="재생 기록 시험">
-      <button class="ghost2" id="lose-reply" type="button" aria-pressed="false">다음 전송의 응답을 유실시키기</button>
-      <label class="speed">시간 속도
-        <select id="speed" aria-label="시간 속도"><option value="1">×1</option><option value="4">×4</option></select>
-      </label>
-    </div>
-  </section>
+      <section class="panel faults" id="p-faults" aria-labelledby="h-faults">
+        <h2 id="h-faults" class="ptitle">일부러 고장 내기</h2>
+        <p class="hint">기기마다 연결을 끊거나, 서버가 보내는 변경 알림의 순서를 뒤섞거나 중복·누락시키거나, 기기 시계를 틀리게 할 수 있습니다.</p>
+        <div class="scroll">
+          <table id="fault-table">
+            <thead>
+              <tr>
+                <th>기기</th>
+                <th>연결</th>
+                <th>받는 알림</th>
+                <th>기기 시계</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <h3 class="sub-h">조작해 보기</h3>
+        <div class="actions" id="actions" role="group" aria-label="조작">
+          <button class="ghost2" type="button" data-act="web-next">운영 웹: 다음 항목</button>
+          <button class="ghost2" type="button" data-act="burst">운영 웹: 연속 조작 6번</button>
+          <button class="ghost2" type="button" data-act="race-next">두 사람이 동시에 '다음'</button>
+          <button class="ghost2" type="button" data-act="race-schedule">두 사람이 동시에 편성표 저장</button>
+          <button class="ghost2" type="button" data-act="race-volume">두 사람이 동시에 음량 변경</button>
+          <button class="ghost2" type="button" data-act="notice">운영 웹: 긴급 공지 20초</button>
+        </div>
+        <h3 class="sub-h">재생 기록</h3>
+        <div class="actions" role="group" aria-label="재생 기록 시험">
+          <button class="ghost2" id="lose-reply" type="button" aria-pressed="false">다음 전송의 응답을 유실시키기</button>
+          <label class="speed"
+            >시간 속도
+            <select id="speed" aria-label="시간 속도">
+              <option value="1">×1</option>
+              <option value="4">×4</option>
+            </select>
+          </label>
+        </div>
+      </section>
 
-  <section class="panel result" id="p-result" aria-labelledby="h-res" data-ok="true">
-    <h2 id="h-res" class="ptitle">네 대가 같은 상태인지</h2>
-    <p class="what" id="verdict-title" role="status"></p>
-    <p class="easy" id="verdict-easy"></p>
-    <div class="scroll">
-      <table id="result-table">
-        <thead><tr><th>기기</th><th>연결</th><th class="num">버전</th><th>재생 항목</th><th class="num">위치 차이(ms)</th><th>일시정지</th><th class="num">음량</th><th>공지</th><th>판정</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div class="two-logs">
-      <div><h3 class="sub-h">조작 결과</h3><ol class="log" id="cmd-log" aria-live="polite"></ol></div>
-      <div><h3 class="sub-h">기기가 받은 이벤트 처리 <span class="tag">최근</span></h3><ol class="log" id="trace-log"></ol></div>
-    </div>
-  </section>
+      <section class="panel result" id="p-result" aria-labelledby="h-res" data-ok="true">
+        <h2 id="h-res" class="ptitle">네 대가 같은 상태인지</h2>
+        <p class="what" id="verdict-title" role="status"></p>
+        <p class="easy" id="verdict-easy"></p>
+        <div class="scroll">
+          <table id="result-table">
+            <thead>
+              <tr>
+                <th>기기</th>
+                <th>연결</th>
+                <th class="num">상태 번호</th>
+                <th>재생 항목</th>
+                <th class="num">위치 차이(ms)</th>
+                <th>일시정지</th>
+                <th class="num">음량</th>
+                <th>공지</th>
+                <th>결과</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="two-logs">
+          <div>
+            <h3 class="sub-h">조작 결과</h3>
+            <ol class="log" id="cmd-log" aria-live="polite"></ol>
+          </div>
+          <div>
+            <h3 class="sub-h">기기가 받은 알림 처리 <span class="tag">최근</span></h3>
+            <ol class="log" id="trace-log"></ol>
+          </div>
+        </div>
+      </section>
 
-  <section class="panel records" id="p-records" aria-labelledby="h-rec">
-    <h2 id="h-rec" class="ptitle">재생 기록은 몇 건 모였나 <span class="tag">브라우저에서 실행 중</span></h2>
-    <p class="hint">TV·PC 가 항목이 바뀔 때마다 재생 기록을 기기 안 대기열에 쌓고 서버로 보냅니다. 서버는 (기기, 일련번호)가 같은 기록을 한 번만 받습니다.</p>
-    <div class="stats" id="rec-stats"></div>
-    <div class="scroll">
-      <table id="rec-table">
-        <thead><tr><th>플레이어</th><th class="num">기기 안에 쌓인 기록</th><th class="num">서버가 받은 마지막 번호</th><th class="num">전송</th><th class="num">전송 실패</th><th class="num">중복으로 걸러진 기록</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
+      <section class="panel records" id="p-records" aria-labelledby="h-rec">
+        <h2 id="h-rec" class="ptitle">재생 기록은 몇 건 모였나 <span class="tag">브라우저에서 실행 중</span></h2>
+        <p class="hint">TV 와 PC 는 항목이 바뀔 때마다 재생 기록을 기기 안에 쌓아 두었다가 서버로 보냅니다. 서버는 (기기, 일련번호)가 같은 기록을 한 번만 받습니다.</p>
+        <div class="stats" id="rec-stats"></div>
+        <div class="scroll">
+          <table id="rec-table">
+            <thead>
+              <tr>
+                <th>플레이어</th>
+                <th class="num">기기 안에 쌓인 기록</th>
+                <th class="num">서버가 받은 마지막 번호</th>
+                <th class="num">전송</th>
+                <th class="num">전송 실패</th>
+                <th class="num">중복으로 걸러진 기록</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
 
-  <section class="panel billing" id="p-billing" aria-labelledby="h-bill">
-    <h2 id="h-bill" class="ptitle">기록이 요금이 되는 과정 <span class="tag">Kotlin 서버 실행 결과</span></h2>
-    <p class="hint">정산은 Kotlin 서버 코드가 계산합니다. 아래는 그 코드에 시험 입력을 넣어 실제로 실행한 결과를 저장한 파일(<code>billing-run.json</code>)을 읽어 온 것입니다. 이 페이지에서 방금 만든 기록과는 별개의 입력입니다. 요금제: 화면 1대 9,900원, 재생 100시간까지 시간당 100원, 100~300시간 80원, 300시간 초과 60원.</p>
-    <div id="bill-picker" class="presets" role="radiogroup" aria-label="정산 사례"></div>
-    <p class="sublabel" id="bill-note"></p>
-    <div class="two-cols">
-      <div>
-        <h3 class="sub-h">입력한 재생 기록</h3>
-        <div class="scroll"><table id="bill-records"><thead><tr><th class="num">번호</th><th>기기</th><th>서버 시각 시작</th><th>끝</th><th>도착</th></tr></thead><tbody></tbody></table></div>
+      <section class="panel billing" id="p-billing" aria-labelledby="h-bill">
+        <h2 id="h-bill" class="ptitle">기록이 요금이 되는 과정 <span class="tag">서버에서 미리 돌린 결과</span></h2>
+        <p class="hint">
+          요금 계산은 서버(Kotlin) 코드가 합니다. 아래는 시험용 기록을 그 코드에 넣어 미리 돌려 저장해 둔 결과(<code>billing-run.json</code>)입니다. 위에서 방금 만든 기록과는
+          별개입니다. 요금제: 화면 1대 9,900원, 재생 100시간까지 시간당 100원, 100~300시간 80원, 300시간 초과 60원.
+        </p>
+        <div id="bill-picker" class="presets" role="radiogroup" aria-label="정산 사례"></div>
+        <p class="sublabel" id="bill-note"></p>
+        <div class="two-cols">
+          <div>
+            <h3 class="sub-h">넣은 재생 기록</h3>
+            <div class="scroll">
+              <table id="bill-records">
+                <thead>
+                  <tr>
+                    <th class="num">번호</th>
+                    <th>기기</th>
+                    <th>서버 시각 시작</th>
+                    <th>끝</th>
+                    <th>도착</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3 class="sub-h">정산서 <span id="bill-step-label" class="mono"></span></h3>
+            <div id="bill-steps" class="presets" role="radiogroup" aria-label="정산 단계"></div>
+            <div class="scroll">
+              <table id="bill-lines">
+                <thead>
+                  <tr>
+                    <th>구분</th>
+                    <th>내용</th>
+                    <th class="num">수량</th>
+                    <th class="num">단가</th>
+                    <th class="num">금액</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="meta" id="bill-trace" aria-live="polite">줄을 누르면 그 금액의 근거가 된 날짜와 재생 기록 번호가 나옵니다.</p>
+          </div>
+        </div>
+        <h3 class="sub-h">실제 서버를 띄워 계산한 요금 <span class="tag">자동 시험</span></h3>
+        <p class="hint" id="e2e-bill-note"></p>
+        <div class="scroll">
+          <table id="e2e-bill">
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>내용</th>
+                <th class="num">수량</th>
+                <th class="num">금액</th>
+                <th class="num">일별 사용량</th>
+                <th class="num">원본 기록</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel tests" id="p-tests" aria-labelledby="h-tests">
+        <h2 id="h-tests" class="ptitle">테스트 실행 결과 <span class="tag">make verify</span></h2>
+        <p class="hint">아래 숫자는 <code>make verify</code> 로 테스트를 돌리고 남긴 결과 파일에서 읽은 값입니다.</p>
+        <table id="test-summary">
+          <thead>
+            <tr>
+              <th>종류</th>
+              <th>시험 내용</th>
+              <th class="num">통과</th>
+              <th class="num">실패</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="panel drift" id="p-drift" aria-labelledby="h-drift">
+        <h2 id="h-drift" class="ptitle">명세와 코드가 어긋나면 막힙니다 <span class="tag">일부러 깨뜨려 본 결과</span></h2>
+        <p class="hint">
+          API 설계 문서(OpenAPI)에서 타입과 검사 규칙을 만들고, 서버 응답을 그 문서로 검사합니다. 문서만 고치거나 코드만 고치면 <code>make verify</code> 가 실패합니다. 실제로
+          그렇게 바꿔서 돌린 출력입니다.
+        </p>
+        <div id="drift"></div>
+      </section>
+
+      <section class="panel glossary" aria-labelledby="h-gl">
+        <details>
+          <summary id="h-gl">용어 풀이</summary>
+          <dl>
+            <dt>상태 번호</dt>
+            <dd>서버가 상태를 바꿀 때마다 1씩 올려 붙이는 번호. 기기는 번호가 이어질 때만 변경 알림을 적용합니다.</dd>
+            <dt>현재 상태 전체(스냅샷)</dt>
+            <dd>알림이 중간에 빠졌거나 연결이 끊겼다 돌아왔을 때, 서버에서 지금 상태를 통째로 받아 따라잡는 것.</dd>
+            <dt>같은 요청을 다시 보내도 안전함(멱등)</dt>
+            <dd>재생 기록은 (기기, 일련번호)로 구분해서, 같은 기록을 몇 번 보내도 한 번만 셉니다.</dd>
+            <dt>시계 차이</dt>
+            <dd>기기 시계와 서버 시계가 다른 정도. 기기는 서버가 알려 준 시각으로 차이를 재서 재생 위치를 서버 시각 기준으로 계산합니다.</dd>
+            <dt>마감과 조정</dt>
+            <dd>월을 마감하면 그 정산서는 고치지 않습니다. 마감 뒤에 늦게 도착한 기록은 다음 정산서에 조정 줄로 들어갑니다.</dd>
+          </dl>
+        </details>
+      </section>
+    </main>
+    <footer>
+      <span
+        >만든 것: 운영 웹, 플레이어, 동기화 코드는 TypeScript(Next.js, React), 서버는 Kotlin·Spring Boot, 저장은 PostgreSQL·Redis. 예시 데이터만 씁니다. 이 페이지는 외부 서버에
+        요청을 보내지 않습니다. 쿠키는 설명을 이미 봤는지 기억하는 sl_tour 하나만 쓰고, 개인 정보는 담지 않습니다.</span
+      >
+    </footer>
+
+    <aside id="tour" class="tour" aria-labelledby="tour-title" hidden>
+      <div class="tour-head"><span class="mono" id="tour-prog" aria-live="off">1/8</span><button id="tour-collapse" class="ghost2" type="button">접기</button></div>
+      <h2 id="tour-title" tabindex="-1"></h2>
+      <div id="tour-text" aria-live="polite"></div>
+      <p class="look" id="tour-look"></p>
+      <div class="tour-nav">
+        <button id="tour-prev" class="ghost2" type="button">이전</button>
+        <button id="tour-next" class="primary" type="button">다음</button>
       </div>
-      <div>
-        <h3 class="sub-h">정산서 <span id="bill-step-label" class="mono"></span></h3>
-        <div id="bill-steps" class="presets" role="radiogroup" aria-label="정산 단계"></div>
-        <div class="scroll"><table id="bill-lines"><thead><tr><th>구분</th><th>내용</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th></tr></thead><tbody></tbody></table></div>
-        <p class="meta" id="bill-trace" aria-live="polite">줄을 누르면 그 금액의 근거가 된 날짜와 재생 기록 번호를 보여 줍니다.</p>
-      </div>
-    </div>
-    <h3 class="sub-h">실제 서버를 띄워 만든 정산 <span class="tag">e2e</span></h3>
-    <p class="hint" id="e2e-bill-note"></p>
-    <div class="scroll"><table id="e2e-bill"><thead><tr><th>구분</th><th>내용</th><th class="num">수량</th><th class="num">금액</th><th class="num">일별 사용량</th><th class="num">원본 기록</th></tr></thead><tbody></tbody></table></div>
-  </section>
-
-  <section class="panel tests" id="p-tests" aria-labelledby="h-tests">
-    <h2 id="h-tests" class="ptitle">테스트 실행 결과 <span class="tag">make verify</span></h2>
-    <p class="hint">아래 숫자는 <code>make verify</code> 로 테스트를 돌리고 남긴 결과 파일에서 읽은 값입니다.</p>
-    <table id="test-summary"><thead><tr><th>종류</th><th>시험 내용</th><th class="num">통과</th><th class="num">실패</th></tr></thead><tbody></tbody></table>
-  </section>
-
-  <section class="panel drift" id="p-drift" aria-labelledby="h-drift">
-    <h2 id="h-drift" class="ptitle">명세와 코드가 어긋나면 막힙니다 <span class="tag">일부러 깨뜨려 본 결과</span></h2>
-    <p class="hint">OpenAPI 명세에서 TypeScript 타입과 이벤트 스키마를 만들고, 서버 응답은 그 명세로 검사합니다. 명세만 바꾸거나 코드만 바꾸면 <code>make verify</code> 가 실패합니다. 실제로 그렇게 바꿔서 돌린 출력입니다.</p>
-    <div id="drift"></div>
-  </section>
-
-  <section class="panel glossary" aria-labelledby="h-gl">
-    <details>
-      <summary id="h-gl">용어 풀이</summary>
-      <dl>
-        <dt>스냅샷</dt><dd>화면 상태 전체를 한 번에 받는 것. 이벤트가 중간에 빠졌거나 끊겼다 다시 붙을 때 이걸로 따라잡습니다.</dd>
-        <dt>버전</dt><dd>서버가 상태를 바꿀 때마다 1씩 올려 붙이는 번호. 기기는 번호가 이어질 때만 이벤트를 적용합니다.</dd>
-        <dt>멱등</dt><dd>같은 요청을 몇 번 보내도 결과가 한 번 보낸 것과 같은 성질. 재생 기록은 (기기, 일련번호)로 이를 지킵니다.</dd>
-        <dt>시계 차이</dt><dd>기기 시계와 서버 시계가 다른 정도. 기기는 서버가 알려 준 시각으로 차이를 재서 재생 위치를 서버 시각 기준으로 계산합니다.</dd>
-        <dt>마감과 조정</dt><dd>월을 마감하면 그 정산서는 고치지 않습니다. 마감 뒤에 늦게 도착한 기록은 다음 정산서에 조정 항목으로 들어갑니다.</dd>
-      </dl>
-    </details>
-  </section>
-</main>
-<footer><span>예시 데이터만 씁니다. 이 페이지는 외부 서버에 요청을 보내지 않습니다. 쿠키는 설명을 이미 봤는지 기억하는 sl_tour 하나만 쓰고, 개인 정보는 담지 않습니다.</span></footer>
-
-<aside id="tour" class="tour" aria-labelledby="tour-title" hidden>
-  <div class="tour-head"><span class="mono" id="tour-prog" aria-live="off">1/8</span><button id="tour-collapse" class="ghost2" type="button">접기</button></div>
-  <h2 id="tour-title" tabindex="-1"></h2>
-  <div id="tour-text" aria-live="polite"></div>
-  <p class="look" id="tour-look"></p>
-  <div class="tour-nav">
-    <button id="tour-prev" class="ghost2" type="button">이전</button>
-    <button id="tour-next" class="primary" type="button">다음</button>
-  </div>
-  <p class="hint" id="tour-keys">← → 키로 넘길 수 있습니다.</p>
-</aside>
-<button id="tour-open" class="tour-reopen" type="button" hidden>설명 열기</button>
-<script type="module" src="app.js"></script>
-</body>
+      <p class="hint" id="tour-keys">← → 키로 넘길 수 있습니다.</p>
+    </aside>
+    <button id="tour-open" class="tour-reopen" type="button" hidden>설명 열기</button>
+    <script type="module" src="app.js"></script>
+  </body>
 </html>

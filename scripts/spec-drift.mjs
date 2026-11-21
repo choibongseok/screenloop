@@ -28,8 +28,8 @@ try {
   writeFileSync(SPEC, backups[SPEC].replaceAll('serverTimeMs', 'serverClockMs'));
   const a = run('node', ['scripts/spec-export.mjs', '--check']);
   blocks.push({
-    title: '명세만 바꾸면: 생성물 검사가 막는다',
-    change: 'Snapshot 의 serverTimeMs 를 serverClockMs 로 바꿈(코드는 그대로)',
+    title: '문서만 바꾸면: 문서에서 만든 파일 검사가 막는다',
+    change: 'API 문서에서 서버 시각 필드 이름 serverTimeMs 를 serverClockMs 로 바꿈(코드는 그대로)',
     where: SPEC,
     command: 'node scripts/spec-export.mjs --check',
     exitCode: a.code,
@@ -37,8 +37,8 @@ try {
   });
   const b = run('bash', ['scripts/gradle.sh', ':server:test', '--tests', '*ContractIT', '--console=plain']);
   blocks.push({
-    title: '명세만 바꾸면: 계약 테스트도 막는다',
-    change: '같은 변경. 서버는 여전히 serverTimeMs 를 응답한다',
+    title: '문서만 바꾸면: 서버 응답 검사도 막는다',
+    change: '같은 변경. 서버는 여전히 serverTimeMs 로 응답한다',
     where: SPEC,
     command: 'gradlew :server:test --tests *ContractIT',
     exitCode: b.code,
@@ -56,8 +56,8 @@ try {
   );
   const c = run('bash', ['scripts/gradle.sh', ':server:test', '--tests', '*ContractIT', '--console=plain']);
   blocks.push({
-    title: '코드만 바꾸면: 계약 테스트가 막는다',
-    change: '서버 응답의 serverTimeMs 를 serverClock 으로 바꿈(명세는 그대로)',
+    title: '코드만 바꾸면: 서버 응답 검사가 막는다',
+    change: '서버 응답의 필드 이름 serverTimeMs 를 serverClock 으로 바꿈(API 문서는 그대로)',
     where: API,
     command: 'gradlew :server:test --tests *ContractIT',
     exitCode: c.code,
