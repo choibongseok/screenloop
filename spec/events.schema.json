@@ -1,0 +1,698 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://screenloop.example/events.schema.json",
+  "title": "Screenloop 이벤트와 상태 (spec/openapi.yaml 에서 생성, 직접 고치지 않는다)",
+  "$defs": {
+    "Schedule": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ScheduleItem"
+          }
+        }
+      }
+    },
+    "ScheduleItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "sceneId",
+        "durationSec"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "sceneId": {
+          "type": "string",
+          "enum": [
+            "aurora",
+            "waves",
+            "grid",
+            "pulse",
+            "dusk"
+          ]
+        },
+        "durationSec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "window": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Window"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Window": {
+      "description": "하루 중 이 시간대에만 재생한다. 분 단위(0~1440), toMin 이 fromMin 보다 작으면 자정을 넘긴다.",
+      "type": "object",
+      "required": [
+        "fromMin",
+        "toMin"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fromMin": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        },
+        "toMin": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1440
+        }
+      }
+    },
+    "Playback": {
+      "description": "재생 위치의 기준점. 지금 위치는 (paused 면 positionMs, 아니면 positionMs + 서버 시각 - anchorMs)를\n재생 목록 전체 길이로 나눈 나머지다. 기기 시계가 아니라 서버 시각으로 계산한다.\n",
+      "type": "object",
+      "required": [
+        "anchorMs",
+        "positionMs",
+        "paused"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "anchorMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "positionMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "paused": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Override": {
+      "type": "object",
+      "required": [
+        "text",
+        "untilMs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "untilMs": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "DeviceState": {
+      "type": "object",
+      "required": [
+        "deviceId",
+        "version",
+        "scheduleVersion",
+        "schedule",
+        "playback",
+        "volume",
+        "override"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scheduleVersion": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "schedule": {
+          "$ref": "#/$defs/Schedule"
+        },
+        "playback": {
+          "$ref": "#/$defs/Playback"
+        },
+        "volume": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "override": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Override"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Snapshot": {
+      "type": "object",
+      "required": [
+        "state",
+        "serverTimeMs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/DeviceState"
+        },
+        "serverTimeMs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "ScheduleReplaced": {
+      "type": "object",
+      "required": [
+        "type",
+        "deviceId",
+        "version",
+        "serverTimeMs",
+        "actor",
+        "schedule",
+        "scheduleVersion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "schedule.replaced"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "serverTimeMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actor": {
+          "type": "string"
+        },
+        "schedule": {
+          "$ref": "#/$defs/Schedule"
+        },
+        "scheduleVersion": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "PlaybackChanged": {
+      "type": "object",
+      "required": [
+        "type",
+        "deviceId",
+        "version",
+        "serverTimeMs",
+        "actor",
+        "reason",
+        "positionMs",
+        "paused"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "playback.changed"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "serverTimeMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actor": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "next",
+            "jump",
+            "pause",
+            "resume",
+            "seek"
+          ]
+        },
+        "positionMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "paused": {
+          "type": "boolean"
+        }
+      }
+    },
+    "VolumeChanged": {
+      "type": "object",
+      "required": [
+        "type",
+        "deviceId",
+        "version",
+        "serverTimeMs",
+        "actor",
+        "volume"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "volume.changed"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "serverTimeMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actor": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "OverrideSet": {
+      "type": "object",
+      "required": [
+        "type",
+        "deviceId",
+        "version",
+        "serverTimeMs",
+        "actor",
+        "text",
+        "untilMs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "override.set"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "serverTimeMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actor": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "untilMs": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "OverrideCleared": {
+      "type": "object",
+      "required": [
+        "type",
+        "deviceId",
+        "version",
+        "serverTimeMs",
+        "actor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "override.cleared"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "serverTimeMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actor": {
+          "type": "string"
+        }
+      }
+    },
+    "StateEvent": {
+      "description": "한 화면의 상태 변경 한 건. version 은 화면마다 1부터 빠짐없이 이어진다.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ScheduleReplaced"
+        },
+        {
+          "$ref": "#/$defs/PlaybackChanged"
+        },
+        {
+          "$ref": "#/$defs/VolumeChanged"
+        },
+        {
+          "$ref": "#/$defs/OverrideSet"
+        },
+        {
+          "$ref": "#/$defs/OverrideCleared"
+        }
+      ]
+    },
+    "Command": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ScheduleReplaceCommand"
+        },
+        {
+          "$ref": "#/$defs/PlaybackNextCommand"
+        },
+        {
+          "$ref": "#/$defs/PlaybackJumpCommand"
+        },
+        {
+          "$ref": "#/$defs/PlaybackPauseCommand"
+        },
+        {
+          "$ref": "#/$defs/PlaybackResumeCommand"
+        },
+        {
+          "$ref": "#/$defs/PlaybackSeekCommand"
+        },
+        {
+          "$ref": "#/$defs/VolumeSetCommand"
+        },
+        {
+          "$ref": "#/$defs/OverrideSetCommand"
+        },
+        {
+          "$ref": "#/$defs/OverrideClearCommand"
+        }
+      ]
+    },
+    "CommandBase": {
+      "type": "object",
+      "required": [
+        "commandId"
+      ],
+      "properties": {
+        "commandId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    },
+    "ScheduleReplaceCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "baseScheduleVersion",
+            "items"
+          ],
+          "properties": {
+            "type": {
+              "const": "schedule.replace"
+            },
+            "baseScheduleVersion": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ScheduleItem"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "PlaybackNextCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "fromItemId"
+          ],
+          "properties": {
+            "type": {
+              "const": "playback.next"
+            },
+            "fromItemId": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "PlaybackJumpCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "itemId"
+          ],
+          "properties": {
+            "type": {
+              "const": "playback.jump"
+            },
+            "itemId": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "PlaybackPauseCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "playback.pause"
+            }
+          }
+        }
+      ]
+    },
+    "PlaybackResumeCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "playback.resume"
+            }
+          }
+        }
+      ]
+    },
+    "PlaybackSeekCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "positionMs"
+          ],
+          "properties": {
+            "type": {
+              "const": "playback.seek"
+            },
+            "positionMs": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "VolumeSetCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "volume"
+          ],
+          "properties": {
+            "type": {
+              "const": "volume.set"
+            },
+            "volume": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "OverrideSetCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "text"
+          ],
+          "properties": {
+            "type": {
+              "const": "override.set"
+            },
+            "text": {
+              "type": "string"
+            },
+            "durationSec": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "OverrideClearCommand": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CommandBase"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "override.clear"
+            }
+          }
+        }
+      ]
+    },
+    "CommandResult": {
+      "type": "object",
+      "required": [
+        "result",
+        "version",
+        "replayed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "rejected"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "stale",
+            "conflict",
+            "invalid",
+            "unchanged"
+          ]
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "replayed": {
+          "type": "boolean"
+        },
+        "event": {
+          "$ref": "#/$defs/StateEvent"
+        }
+      }
+    }
+  }
+}

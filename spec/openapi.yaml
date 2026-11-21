@@ -1,0 +1,705 @@
+openapi: 3.1.0
+info:
+  title: Screenloop API
+  version: 1.0.0
+  description: |
+    매장 화면(운영 웹, 휴대폰 리모컨, TV·PC 플레이어)이 같은 상태를 보게 하는 동기화 API와,
+    재생 기록을 정산 근거로 모으는 API. 이 파일이 서버 응답·TypeScript 타입·이벤트 스키마의 기준이다.
+    `events.schema.json` 은 이 파일의 components.schemas 에서 만든다(`npm run spec:export`).
+servers:
+  - url: http://127.0.0.1:59680
+security:
+  - bearer: []
+paths:
+  /api/auth/login:
+    post:
+      operationId: login
+      security: []
+      summary: 고정 계정 로그인(운영자 operator, 보기 전용 viewer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: 토큰 발급
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '401':
+          description: 계정 정보가 맞지 않음
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/devices:
+    get:
+      operationId: listDevices
+      summary: 화면 목록과 현재 상태
+      responses:
+        '200':
+          description: 화면 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DeviceSummary' }
+  /api/devices/{deviceId}/snapshot:
+    get:
+      operationId: getSnapshot
+      summary: 한 화면의 현재 상태 전체(서버 시각 포함)
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: 스냅샷
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Snapshot' }
+        '404':
+          description: 없는 화면
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/devices/{deviceId}/events:
+    get:
+      operationId: listEvents
+      summary: 지정한 버전 이후의 변경 이벤트(따라잡기용, 최대 500개)
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - name: after
+          in: query
+          required: true
+          schema: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: 이벤트 목록(버전 오름차순)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/StateEvent' }
+  /api/devices/{deviceId}/stream:
+    get:
+      operationId: streamEvents
+      summary: 서버가 보내는 이벤트 스트림(SSE). 헤더 Last-Event-ID 로 끊긴 뒤 이어 받는다.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: "text/event-stream. 각 메시지의 id 는 이벤트 버전, data 는 StateEvent JSON."
+          content:
+            text/event-stream:
+              schema: { type: string }
+  /api/devices/{deviceId}/commands:
+    post:
+      operationId: sendCommand
+      summary: 한 화면에 조작 명령. 같은 commandId 를 다시 보내면 처음 결과를 그대로 돌려준다.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Command' }
+      responses:
+        '200':
+          description: 처리 결과(받아들임 또는 거절 사유)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CommandResult' }
+        '403':
+          description: 운영자 권한이 아님
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/groups:
+    get:
+      operationId: listGroups
+      summary: 화면 묶음 목록
+      responses:
+        '200':
+          description: 묶음 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Group' }
+  /api/groups/{groupId}/commands:
+    post:
+      operationId: sendGroupCommand
+      summary: 묶음에 속한 모든 화면에 같은 명령. 화면마다 결과가 따로 나온다.
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Command' }
+      responses:
+        '200':
+          description: 화면별 결과
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupCommandResult' }
+        '403':
+          description: 운영자 권한이 아님
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/devices/{deviceId}/play-records:
+    post:
+      operationId: uploadPlayRecords
+      summary: 플레이어가 쌓아 둔 재생 기록을 보낸다. (기기 ID, 일련번호)로 멱등이라 다시 보내도 안전하다.
+      security:
+        - deviceKey: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PlayRecordBatch' }
+      responses:
+        '200':
+          description: 수집 결과
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlayRecordResult' }
+    get:
+      operationId: listPlayRecords
+      summary: 한 화면의 수집된 재생 기록(최근 200건)
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: 재생 기록
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PlayRecordRow' }
+  /api/billing/preview:
+    get:
+      operationId: previewInvoice
+      summary: 마감 전 정산서 미리보기(저장하지 않음)
+      parameters:
+        - { name: accountId, in: query, required: true, schema: { type: string } }
+        - { name: month, in: query, required: true, schema: { type: string, pattern: '^\d{4}-\d{2}$' } }
+      responses:
+        '200':
+          description: 미리보기
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invoice' }
+  /api/billing/close:
+    post:
+      operationId: closeMonth
+      summary: 월을 마감하고 정산서를 저장한다. 이전에 마감한 달에 늦게 도착한 기록은 조정 항목으로 들어간다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CloseRequest' }
+      responses:
+        '200':
+          description: 저장된 정산서
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invoice' }
+        '403':
+          description: 운영자 권한이 아님
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: 이미 마감한 달
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/invoices/{invoiceId}:
+    get:
+      operationId: getInvoice
+      summary: 저장된 정산서
+      parameters:
+        - { name: invoiceId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: 정산서
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Invoice' }
+        '404':
+          description: 없는 정산서
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/invoice-lines/{lineId}/trace:
+    get:
+      operationId: traceInvoiceLine
+      summary: 정산 한 줄에서 일별 사용량과 원본 재생 기록까지 거슬러 올라간다.
+      parameters:
+        - { name: lineId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: 근거
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trace' }
+        '404':
+          description: 없는 정산 항목
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/version:
+    get:
+      operationId: getVersion
+      security: []
+      summary: 실행 중인 서버 버전(배포·되돌리기 확인용)
+      responses:
+        '200':
+          description: 버전
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VersionInfo' }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+    deviceKey: { type: apiKey, in: header, name: X-Device-Key }
+  parameters:
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    Error:
+      type: object
+      required: [error, message]
+      additionalProperties: false
+      properties:
+        error: { type: string }
+        message: { type: string }
+    LoginRequest:
+      type: object
+      required: [username, password]
+      additionalProperties: false
+      properties:
+        username: { type: string }
+        password: { type: string }
+    LoginResponse:
+      type: object
+      required: [token, role, username]
+      additionalProperties: false
+      properties:
+        token: { type: string }
+        role: { type: string, enum: [operator, viewer] }
+        username: { type: string }
+    VersionInfo:
+      type: object
+      required: [version]
+      additionalProperties: false
+      properties:
+        version: { type: string }
+    Window:
+      description: 하루 중 이 시간대에만 재생한다. 분 단위(0~1440), toMin 이 fromMin 보다 작으면 자정을 넘긴다.
+      type: object
+      required: [fromMin, toMin]
+      additionalProperties: false
+      properties:
+        fromMin: { type: integer, minimum: 0, maximum: 1440 }
+        toMin: { type: integer, minimum: 0, maximum: 1440 }
+    ScheduleItem:
+      type: object
+      required: [id, title, sceneId, durationSec]
+      additionalProperties: false
+      properties:
+        id: { type: string, minLength: 1, maxLength: 40 }
+        title: { type: string, minLength: 1, maxLength: 60 }
+        sceneId: { type: string, enum: [aurora, waves, grid, pulse, dusk] }
+        durationSec: { type: integer, minimum: 1, maximum: 3600 }
+        window:
+          oneOf:
+            - { $ref: '#/components/schemas/Window' }
+            - { type: 'null' }
+    Schedule:
+      type: object
+      required: [items]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ScheduleItem' }
+    Playback:
+      description: |
+        재생 위치의 기준점. 지금 위치는 (paused 면 positionMs, 아니면 positionMs + 서버 시각 - anchorMs)를
+        재생 목록 전체 길이로 나눈 나머지다. 기기 시계가 아니라 서버 시각으로 계산한다.
+      type: object
+      required: [anchorMs, positionMs, paused]
+      additionalProperties: false
+      properties:
+        anchorMs: { type: integer, minimum: 0 }
+        positionMs: { type: integer, minimum: 0 }
+        paused: { type: boolean }
+    Override:
+      type: object
+      required: [text, untilMs]
+      additionalProperties: false
+      properties:
+        text: { type: string, minLength: 1, maxLength: 80 }
+        untilMs:
+          type: [integer, 'null']
+    DeviceState:
+      type: object
+      required: [deviceId, version, scheduleVersion, schedule, playback, volume, override]
+      additionalProperties: false
+      properties:
+        deviceId: { type: string }
+        version: { type: integer, minimum: 0 }
+        scheduleVersion: { type: integer, minimum: 0 }
+        schedule: { $ref: '#/components/schemas/Schedule' }
+        playback: { $ref: '#/components/schemas/Playback' }
+        volume: { type: integer, minimum: 0, maximum: 100 }
+        override:
+          oneOf:
+            - { $ref: '#/components/schemas/Override' }
+            - { type: 'null' }
+    Snapshot:
+      type: object
+      required: [state, serverTimeMs]
+      additionalProperties: false
+      properties:
+        state: { $ref: '#/components/schemas/DeviceState' }
+        serverTimeMs: { type: integer, minimum: 0 }
+    ScheduleReplaced:
+      type: object
+      required: [type, deviceId, version, serverTimeMs, actor, schedule, scheduleVersion]
+      additionalProperties: false
+      properties:
+        type: { const: schedule.replaced }
+        deviceId: { type: string }
+        version: { type: integer, minimum: 1 }
+        serverTimeMs: { type: integer, minimum: 0 }
+        actor: { type: string }
+        schedule: { $ref: '#/components/schemas/Schedule' }
+        scheduleVersion: { type: integer, minimum: 1 }
+    PlaybackChanged:
+      type: object
+      required: [type, deviceId, version, serverTimeMs, actor, reason, positionMs, paused]
+      additionalProperties: false
+      properties:
+        type: { const: playback.changed }
+        deviceId: { type: string }
+        version: { type: integer, minimum: 1 }
+        serverTimeMs: { type: integer, minimum: 0 }
+        actor: { type: string }
+        reason: { type: string, enum: [next, jump, pause, resume, seek] }
+        positionMs: { type: integer, minimum: 0 }
+        paused: { type: boolean }
+    VolumeChanged:
+      type: object
+      required: [type, deviceId, version, serverTimeMs, actor, volume]
+      additionalProperties: false
+      properties:
+        type: { const: volume.changed }
+        deviceId: { type: string }
+        version: { type: integer, minimum: 1 }
+        serverTimeMs: { type: integer, minimum: 0 }
+        actor: { type: string }
+        volume: { type: integer, minimum: 0, maximum: 100 }
+    OverrideSet:
+      type: object
+      required: [type, deviceId, version, serverTimeMs, actor, text, untilMs]
+      additionalProperties: false
+      properties:
+        type: { const: override.set }
+        deviceId: { type: string }
+        version: { type: integer, minimum: 1 }
+        serverTimeMs: { type: integer, minimum: 0 }
+        actor: { type: string }
+        text: { type: string, minLength: 1, maxLength: 80 }
+        untilMs:
+          type: [integer, 'null']
+    OverrideCleared:
+      type: object
+      required: [type, deviceId, version, serverTimeMs, actor]
+      additionalProperties: false
+      properties:
+        type: { const: override.cleared }
+        deviceId: { type: string }
+        version: { type: integer, minimum: 1 }
+        serverTimeMs: { type: integer, minimum: 0 }
+        actor: { type: string }
+    StateEvent:
+      description: 한 화면의 상태 변경 한 건. version 은 화면마다 1부터 빠짐없이 이어진다.
+      oneOf:
+        - { $ref: '#/components/schemas/ScheduleReplaced' }
+        - { $ref: '#/components/schemas/PlaybackChanged' }
+        - { $ref: '#/components/schemas/VolumeChanged' }
+        - { $ref: '#/components/schemas/OverrideSet' }
+        - { $ref: '#/components/schemas/OverrideCleared' }
+    CommandBase:
+      type: object
+      required: [commandId]
+      properties:
+        commandId: { type: string, minLength: 1, maxLength: 64 }
+    ScheduleReplaceCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type, baseScheduleVersion, items]
+          properties:
+            type: { const: schedule.replace }
+            baseScheduleVersion: { type: integer, minimum: 0 }
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ScheduleItem' }
+    PlaybackNextCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type, fromItemId]
+          properties:
+            type: { const: playback.next }
+            fromItemId: { type: string }
+    PlaybackJumpCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type, itemId]
+          properties:
+            type: { const: playback.jump }
+            itemId: { type: string }
+    PlaybackPauseCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type]
+          properties:
+            type: { const: playback.pause }
+    PlaybackResumeCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type]
+          properties:
+            type: { const: playback.resume }
+    PlaybackSeekCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type, positionMs]
+          properties:
+            type: { const: playback.seek }
+            positionMs: { type: integer, minimum: 0 }
+    VolumeSetCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type, volume]
+          properties:
+            type: { const: volume.set }
+            volume: { type: integer }
+    OverrideSetCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type, text]
+          properties:
+            type: { const: override.set }
+            text: { type: string }
+            durationSec:
+              type: [integer, 'null']
+    OverrideClearCommand:
+      allOf:
+        - { $ref: '#/components/schemas/CommandBase' }
+        - type: object
+          required: [type]
+          properties:
+            type: { const: override.clear }
+    Command:
+      oneOf:
+        - { $ref: '#/components/schemas/ScheduleReplaceCommand' }
+        - { $ref: '#/components/schemas/PlaybackNextCommand' }
+        - { $ref: '#/components/schemas/PlaybackJumpCommand' }
+        - { $ref: '#/components/schemas/PlaybackPauseCommand' }
+        - { $ref: '#/components/schemas/PlaybackResumeCommand' }
+        - { $ref: '#/components/schemas/PlaybackSeekCommand' }
+        - { $ref: '#/components/schemas/VolumeSetCommand' }
+        - { $ref: '#/components/schemas/OverrideSetCommand' }
+        - { $ref: '#/components/schemas/OverrideClearCommand' }
+    CommandResult:
+      type: object
+      required: [result, version, replayed]
+      additionalProperties: false
+      properties:
+        result: { type: string, enum: [accepted, rejected] }
+        reason:
+          type: string
+          enum: [stale, conflict, invalid, unchanged]
+        version: { type: integer, minimum: 0 }
+        replayed: { type: boolean }
+        event: { $ref: '#/components/schemas/StateEvent' }
+    GroupCommandResult:
+      type: object
+      required: [groupId, results]
+      additionalProperties: false
+      properties:
+        groupId: { type: string }
+        results:
+          type: array
+          items:
+            type: object
+            required: [deviceId, outcome]
+            additionalProperties: false
+            properties:
+              deviceId: { type: string }
+              outcome: { $ref: '#/components/schemas/CommandResult' }
+    Group:
+      type: object
+      required: [id, name, deviceIds]
+      additionalProperties: false
+      properties:
+        id: { type: string }
+        name: { type: string }
+        deviceIds:
+          type: array
+          items: { type: string }
+    NowPlaying:
+      type: object
+      required: [itemId, title]
+      additionalProperties: false
+      properties:
+        itemId: { type: string }
+        title: { type: string }
+    DeviceSummary:
+      type: object
+      required: [id, name, groupId, online, lastSeenMs, version, nowPlaying, paused, volume, overrideActive]
+      additionalProperties: false
+      properties:
+        id: { type: string }
+        name: { type: string }
+        groupId: { type: string }
+        online: { type: boolean }
+        lastSeenMs:
+          type: [integer, 'null']
+        version: { type: integer, minimum: 0 }
+        nowPlaying:
+          oneOf:
+            - { $ref: '#/components/schemas/NowPlaying' }
+            - { type: 'null' }
+        paused: { type: boolean }
+        volume: { type: integer }
+        overrideActive: { type: boolean }
+    PlayRecordInput:
+      type: object
+      required: [seq, itemId, startedAtMs, endedAtMs]
+      additionalProperties: false
+      properties:
+        seq: { type: integer, minimum: 1 }
+        itemId: { type: string }
+        startedAtMs: { type: integer }
+        endedAtMs: { type: integer }
+    PlayRecordBatch:
+      type: object
+      required: [clockOffsetMs, records]
+      additionalProperties: false
+      properties:
+        clockOffsetMs:
+          description: 기기가 추정한 (서버 시각 - 기기 시각). 기록의 시각에 더해 서버 시각으로 맞춘다.
+          type: integer
+        records:
+          type: array
+          maxItems: 500
+          items: { $ref: '#/components/schemas/PlayRecordInput' }
+    PlayRecordResult:
+      type: object
+      required: [accepted, duplicates, quarantined, ackSeq]
+      additionalProperties: false
+      properties:
+        accepted: { type: integer, minimum: 0 }
+        duplicates: { type: integer, minimum: 0 }
+        quarantined: { type: integer, minimum: 0 }
+        ackSeq:
+          description: 이 기기에서 서버가 받은 가장 큰 일련번호. 플레이어는 이 번호까지의 기록을 지워도 된다.
+          type: integer
+          minimum: 0
+    PlayRecordRow:
+      type: object
+      required: [id, deviceId, seq, itemId, startedAtMs, endedAtMs, status, reason, receivedAtMs, serverStartedAtMs, serverEndedAtMs]
+      additionalProperties: false
+      properties:
+        id: { type: integer }
+        deviceId: { type: string }
+        seq: { type: integer }
+        itemId: { type: string }
+        startedAtMs: { type: integer }
+        endedAtMs: { type: integer }
+        status: { type: string, enum: [accepted, quarantined] }
+        reason:
+          type: [string, 'null']
+        receivedAtMs: { type: integer }
+        serverStartedAtMs: { type: integer }
+        serverEndedAtMs: { type: integer }
+    CloseRequest:
+      type: object
+      required: [accountId, month]
+      additionalProperties: false
+      properties:
+        accountId: { type: string }
+        month: { type: string, pattern: '^\d{4}-\d{2}$' }
+    InvoiceLine:
+      type: object
+      required: [id, kind, description, quantity, unitWon, amountWon]
+      additionalProperties: false
+      properties:
+        id:
+          type: [integer, 'null']
+        kind: { type: string, enum: [screen, usage_tier, adjustment] }
+        description: { type: string }
+        quantity: { type: integer }
+        unitWon:
+          type: [integer, 'null']
+        amountWon: { type: integer }
+    Invoice:
+      type: object
+      required: [id, accountId, month, status, currency, totalWon, lines]
+      additionalProperties: false
+      properties:
+        id:
+          type: [integer, 'null']
+        accountId: { type: string }
+        month: { type: string }
+        status: { type: string, enum: [preview, closed] }
+        currency: { const: KRW }
+        totalWon: { type: integer }
+        lines:
+          type: array
+          items: { $ref: '#/components/schemas/InvoiceLine' }
+    UsageDaily:
+      type: object
+      required: [id, deviceId, day, billedSeconds, recordIds]
+      additionalProperties: false
+      properties:
+        id: { type: integer }
+        deviceId: { type: string }
+        day: { type: string }
+        billedSeconds: { type: integer }
+        recordIds:
+          type: array
+          items: { type: integer }
+    Trace:
+      type: object
+      required: [line, daily, records]
+      additionalProperties: false
+      properties:
+        line: { $ref: '#/components/schemas/InvoiceLine' }
+        daily:
+          type: array
+          items: { $ref: '#/components/schemas/UsageDaily' }
+        records:
+          type: array
+          items: { $ref: '#/components/schemas/PlayRecordRow' }

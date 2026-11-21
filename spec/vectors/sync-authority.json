@@ -1,0 +1,1589 @@
+{
+  "baseTimeMs": 1795219200000,
+  "scenarios": [
+    {
+      "name": "basic-playback",
+      "note": "편성표를 넣고 다음·일시정지·재개·이동·음량. 같은 상태로 다시 보내면 unchanged, 안 보던 항목에서 다음을 누르면 stale",
+      "deviceId": "d-test",
+      "steps": [
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c1",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "i1",
+                "title": "아침 인사",
+                "sceneId": "aurora",
+                "durationSec": 10
+              },
+              {
+                "id": "i2",
+                "title": "신메뉴",
+                "sceneId": "waves",
+                "durationSec": 20
+              },
+              {
+                "id": "i3",
+                "title": "이벤트",
+                "sceneId": "grid",
+                "durationSec": 30
+              }
+            ]
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "schedule.replaced",
+              "schedule": {
+                "items": [
+                  {
+                    "id": "i1",
+                    "title": "아침 인사",
+                    "sceneId": "aurora",
+                    "durationSec": 10
+                  },
+                  {
+                    "id": "i2",
+                    "title": "신메뉴",
+                    "sceneId": "waves",
+                    "durationSec": 20
+                  },
+                  {
+                    "id": "i3",
+                    "title": "이벤트",
+                    "sceneId": "grid",
+                    "durationSec": 30
+                  }
+                ]
+              },
+              "scheduleVersion": 1,
+              "deviceId": "d-test",
+              "version": 1,
+              "serverTimeMs": 1795219200000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219203000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c2",
+            "type": "playback.next",
+            "fromItemId": "i1"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "next",
+              "positionMs": 10000,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 2,
+              "serverTimeMs": 1795219203000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219204000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c3",
+            "type": "playback.next",
+            "fromItemId": "i1"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "stale"
+          }
+        },
+        {
+          "nowMs": 1795219215000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c4",
+            "type": "playback.pause"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "pause",
+              "positionMs": 22000,
+              "paused": true,
+              "deviceId": "d-test",
+              "version": 3,
+              "serverTimeMs": 1795219215000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219216000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c5",
+            "type": "playback.pause"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "unchanged"
+          }
+        },
+        {
+          "nowMs": 1795219220000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c6",
+            "type": "playback.resume"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "resume",
+              "positionMs": 22000,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 4,
+              "serverTimeMs": 1795219220000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219221000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c7",
+            "type": "playback.resume"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "unchanged"
+          }
+        },
+        {
+          "nowMs": 1795219222000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c8",
+            "type": "playback.seek",
+            "positionMs": 50000
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "seek",
+              "positionMs": 50000,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 5,
+              "serverTimeMs": 1795219222000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219223000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c9",
+            "type": "playback.seek",
+            "positionMs": 60000
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219224000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c10",
+            "type": "volume.set",
+            "volume": 80
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "volume.changed",
+              "volume": 80,
+              "deviceId": "d-test",
+              "version": 6,
+              "serverTimeMs": 1795219224000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219225000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c11",
+            "type": "volume.set",
+            "volume": 80
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "unchanged"
+          }
+        },
+        {
+          "nowMs": 1795219226000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c12",
+            "type": "playback.jump",
+            "itemId": "i3"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "jump",
+              "positionMs": 30000,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 7,
+              "serverTimeMs": 1795219226000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219227000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c13",
+            "type": "playback.jump",
+            "itemId": "nope"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        }
+      ],
+      "probes": [
+        {
+          "atMs": 1795219226000,
+          "itemId": "i3",
+          "offsetInItemMs": 0
+        },
+        {
+          "atMs": 1795219235999,
+          "itemId": "i3",
+          "offsetInItemMs": 9999
+        },
+        {
+          "atMs": 1795219236000,
+          "itemId": "i3",
+          "offsetInItemMs": 10000
+        },
+        {
+          "atMs": 1795219255999,
+          "itemId": "i3",
+          "offsetInItemMs": 29999
+        },
+        {
+          "atMs": 1795219256000,
+          "itemId": "i1",
+          "offsetInItemMs": 0
+        },
+        {
+          "atMs": 1795219286000,
+          "itemId": "i3",
+          "offsetInItemMs": 0
+        },
+        {
+          "atMs": 1795219325000,
+          "itemId": "i1",
+          "offsetInItemMs": 9000
+        },
+        {
+          "atMs": 1795223200000,
+          "itemId": "i3",
+          "offsetInItemMs": 14000
+        }
+      ],
+      "finalState": {
+        "deviceId": "d-test",
+        "version": 7,
+        "scheduleVersion": 1,
+        "schedule": {
+          "items": [
+            {
+              "id": "i1",
+              "title": "아침 인사",
+              "sceneId": "aurora",
+              "durationSec": 10
+            },
+            {
+              "id": "i2",
+              "title": "신메뉴",
+              "sceneId": "waves",
+              "durationSec": 20
+            },
+            {
+              "id": "i3",
+              "title": "이벤트",
+              "sceneId": "grid",
+              "durationSec": 30
+            }
+          ]
+        },
+        "playback": {
+          "anchorMs": 1795219226000,
+          "positionMs": 30000,
+          "paused": false
+        },
+        "volume": 80,
+        "override": null
+      }
+    },
+    {
+      "name": "concurrent-operators",
+      "note": "두 사람이 거의 동시에 조작. 다음(상대 명령)은 늦은 쪽 stale, 편성표는 먼저 저장한 쪽, 음량과 긴급 공지는 마지막 도착",
+      "deviceId": "d-test",
+      "steps": [
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c14",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "i1",
+                "title": "아침 인사",
+                "sceneId": "aurora",
+                "durationSec": 10
+              },
+              {
+                "id": "i2",
+                "title": "신메뉴",
+                "sceneId": "waves",
+                "durationSec": 20
+              },
+              {
+                "id": "i3",
+                "title": "이벤트",
+                "sceneId": "grid",
+                "durationSec": 30
+              }
+            ]
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "schedule.replaced",
+              "schedule": {
+                "items": [
+                  {
+                    "id": "i1",
+                    "title": "아침 인사",
+                    "sceneId": "aurora",
+                    "durationSec": 10
+                  },
+                  {
+                    "id": "i2",
+                    "title": "신메뉴",
+                    "sceneId": "waves",
+                    "durationSec": 20
+                  },
+                  {
+                    "id": "i3",
+                    "title": "이벤트",
+                    "sceneId": "grid",
+                    "durationSec": 30
+                  }
+                ]
+              },
+              "scheduleVersion": 1,
+              "deviceId": "d-test",
+              "version": 1,
+              "serverTimeMs": 1795219200000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219201000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c15",
+            "type": "playback.next",
+            "fromItemId": "i1"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "next",
+              "positionMs": 10000,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 2,
+              "serverTimeMs": 1795219201000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219201200,
+          "actor": "op-b",
+          "command": {
+            "commandId": "c16",
+            "type": "playback.next",
+            "fromItemId": "i1"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "stale"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c17",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 1,
+            "items": [
+              {
+                "id": "i1",
+                "title": "아침 인사",
+                "sceneId": "aurora",
+                "durationSec": 10
+              },
+              {
+                "id": "i2",
+                "title": "신메뉴",
+                "sceneId": "waves",
+                "durationSec": 20
+              }
+            ]
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "schedule.replaced",
+              "schedule": {
+                "items": [
+                  {
+                    "id": "i1",
+                    "title": "아침 인사",
+                    "sceneId": "aurora",
+                    "durationSec": 10
+                  },
+                  {
+                    "id": "i2",
+                    "title": "신메뉴",
+                    "sceneId": "waves",
+                    "durationSec": 20
+                  }
+                ]
+              },
+              "scheduleVersion": 2,
+              "deviceId": "d-test",
+              "version": 3,
+              "serverTimeMs": 1795219202000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219202100,
+          "actor": "op-b",
+          "command": {
+            "commandId": "c18",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 1,
+            "items": [
+              {
+                "id": "i3",
+                "title": "이벤트",
+                "sceneId": "grid",
+                "durationSec": 30
+              }
+            ]
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "conflict"
+          }
+        },
+        {
+          "nowMs": 1795219203000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c19",
+            "type": "volume.set",
+            "volume": 30
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "volume.changed",
+              "volume": 30,
+              "deviceId": "d-test",
+              "version": 4,
+              "serverTimeMs": 1795219203000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219203100,
+          "actor": "op-b",
+          "command": {
+            "commandId": "c20",
+            "type": "volume.set",
+            "volume": 70
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "volume.changed",
+              "volume": 70,
+              "deviceId": "d-test",
+              "version": 5,
+              "serverTimeMs": 1795219203100,
+              "actor": "op-b"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219204000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c21",
+            "type": "override.set",
+            "text": "점심시간 안내",
+            "durationSec": 60
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "override.set",
+              "text": "점심시간 안내",
+              "untilMs": 1795219264000,
+              "deviceId": "d-test",
+              "version": 6,
+              "serverTimeMs": 1795219204000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219204100,
+          "actor": "op-b",
+          "command": {
+            "commandId": "c22",
+            "type": "override.set",
+            "text": "정전 대비 점검 중"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "override.set",
+              "text": "정전 대비 점검 중",
+              "untilMs": null,
+              "deviceId": "d-test",
+              "version": 7,
+              "serverTimeMs": 1795219204100,
+              "actor": "op-b"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219205000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c23",
+            "type": "override.clear"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "override.cleared",
+              "deviceId": "d-test",
+              "version": 8,
+              "serverTimeMs": 1795219205000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219205100,
+          "actor": "op-b",
+          "command": {
+            "commandId": "c24",
+            "type": "override.clear"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "unchanged"
+          }
+        }
+      ],
+      "probes": [
+        {
+          "atMs": 1795219205100,
+          "itemId": "i1",
+          "offsetInItemMs": 3100
+        },
+        {
+          "atMs": 1795219212000,
+          "itemId": "i2",
+          "offsetInItemMs": 0
+        },
+        {
+          "atMs": 1795219300000,
+          "itemId": "i1",
+          "offsetInItemMs": 8000
+        }
+      ],
+      "finalState": {
+        "deviceId": "d-test",
+        "version": 8,
+        "scheduleVersion": 2,
+        "schedule": {
+          "items": [
+            {
+              "id": "i1",
+              "title": "아침 인사",
+              "sceneId": "aurora",
+              "durationSec": 10
+            },
+            {
+              "id": "i2",
+              "title": "신메뉴",
+              "sceneId": "waves",
+              "durationSec": 20
+            }
+          ]
+        },
+        "playback": {
+          "anchorMs": 1795219202000,
+          "positionMs": 0,
+          "paused": false
+        },
+        "volume": 70,
+        "override": null
+      }
+    },
+    {
+      "name": "time-windows",
+      "note": "시간대 편성. 09:00~12:00 항목과 12:00~18:00 항목, 자정을 넘기는 항목. 재생 대상이 아닌 항목으로 이동하면 invalid",
+      "deviceId": "d-test",
+      "steps": [
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c25",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "am",
+                "title": "오전 메뉴",
+                "sceneId": "dusk",
+                "durationSec": 10,
+                "window": {
+                  "fromMin": 540,
+                  "toMin": 720
+                }
+              },
+              {
+                "id": "pm",
+                "title": "오후 메뉴",
+                "sceneId": "pulse",
+                "durationSec": 20,
+                "window": {
+                  "fromMin": 720,
+                  "toMin": 1080
+                }
+              },
+              {
+                "id": "night",
+                "title": "야간",
+                "sceneId": "dusk",
+                "durationSec": 15,
+                "window": {
+                  "fromMin": 1320,
+                  "toMin": 360
+                }
+              },
+              {
+                "id": "all",
+                "title": "하루 종일",
+                "sceneId": "grid",
+                "durationSec": 5
+              }
+            ]
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "schedule.replaced",
+              "schedule": {
+                "items": [
+                  {
+                    "id": "am",
+                    "title": "오전 메뉴",
+                    "sceneId": "dusk",
+                    "durationSec": 10,
+                    "window": {
+                      "fromMin": 540,
+                      "toMin": 720
+                    }
+                  },
+                  {
+                    "id": "pm",
+                    "title": "오후 메뉴",
+                    "sceneId": "pulse",
+                    "durationSec": 20,
+                    "window": {
+                      "fromMin": 720,
+                      "toMin": 1080
+                    }
+                  },
+                  {
+                    "id": "night",
+                    "title": "야간",
+                    "sceneId": "dusk",
+                    "durationSec": 15,
+                    "window": {
+                      "fromMin": 1320,
+                      "toMin": 360
+                    }
+                  },
+                  {
+                    "id": "all",
+                    "title": "하루 종일",
+                    "sceneId": "grid",
+                    "durationSec": 5
+                  }
+                ]
+              },
+              "scheduleVersion": 1,
+              "deviceId": "d-test",
+              "version": 1,
+              "serverTimeMs": 1795219200000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219201000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c26",
+            "type": "playback.jump",
+            "itemId": "pm"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c27",
+            "type": "playback.jump",
+            "itemId": "night"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219203000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c28",
+            "type": "playback.jump",
+            "itemId": "all"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "jump",
+              "positionMs": 10000,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 2,
+              "serverTimeMs": 1795219203000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219204000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c29",
+            "type": "playback.next",
+            "fromItemId": "all"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "next",
+              "positionMs": 0,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 3,
+              "serverTimeMs": 1795219204000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795230001000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c30",
+            "type": "playback.jump",
+            "itemId": "pm"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "jump",
+              "positionMs": 0,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 4,
+              "serverTimeMs": 1795230001000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795230002000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c31",
+            "type": "playback.jump",
+            "itemId": "am"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795269600000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c32",
+            "type": "playback.jump",
+            "itemId": "night"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "jump",
+              "positionMs": 0,
+              "paused": false,
+              "deviceId": "d-test",
+              "version": 5,
+              "serverTimeMs": 1795269600000,
+              "actor": "op-a"
+            }
+          }
+        }
+      ],
+      "probes": [
+        {
+          "atMs": 1795269600000,
+          "itemId": "night",
+          "offsetInItemMs": 0
+        },
+        {
+          "atMs": 1795269607000,
+          "itemId": "night",
+          "offsetInItemMs": 7000
+        },
+        {
+          "atMs": 1795269616000,
+          "itemId": "all",
+          "offsetInItemMs": 1000
+        },
+        {
+          "atMs": 1795294800000,
+          "itemId": "all",
+          "offsetInItemMs": 0
+        }
+      ],
+      "finalState": {
+        "deviceId": "d-test",
+        "version": 5,
+        "scheduleVersion": 1,
+        "schedule": {
+          "items": [
+            {
+              "id": "am",
+              "title": "오전 메뉴",
+              "sceneId": "dusk",
+              "durationSec": 10,
+              "window": {
+                "fromMin": 540,
+                "toMin": 720
+              }
+            },
+            {
+              "id": "pm",
+              "title": "오후 메뉴",
+              "sceneId": "pulse",
+              "durationSec": 20,
+              "window": {
+                "fromMin": 720,
+                "toMin": 1080
+              }
+            },
+            {
+              "id": "night",
+              "title": "야간",
+              "sceneId": "dusk",
+              "durationSec": 15,
+              "window": {
+                "fromMin": 1320,
+                "toMin": 360
+              }
+            },
+            {
+              "id": "all",
+              "title": "하루 종일",
+              "sceneId": "grid",
+              "durationSec": 5
+            }
+          ]
+        },
+        "playback": {
+          "anchorMs": 1795269600000,
+          "positionMs": 0,
+          "paused": false
+        },
+        "volume": 50,
+        "override": null
+      }
+    },
+    {
+      "name": "invalid-inputs",
+      "note": "잘못된 입력은 이벤트 없이 invalid 로 거절",
+      "deviceId": "d-test",
+      "steps": [
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c33",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": []
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c34",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "i1",
+                "title": "아침 인사",
+                "sceneId": "aurora",
+                "durationSec": 10
+              },
+              {
+                "id": "i1",
+                "title": "아침 인사",
+                "sceneId": "aurora",
+                "durationSec": 10
+              }
+            ]
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c35",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "x",
+                "title": "장면 없음",
+                "sceneId": "movie",
+                "durationSec": 5
+              }
+            ]
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c36",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "x",
+                "title": "길이 0",
+                "sceneId": "grid",
+                "durationSec": 0
+              }
+            ]
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c37",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "x",
+                "title": "",
+                "sceneId": "grid",
+                "durationSec": 5
+              }
+            ]
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c38",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "x",
+                "title": "창 범위",
+                "sceneId": "grid",
+                "durationSec": 5,
+                "window": {
+                  "fromMin": 0,
+                  "toMin": 1441
+                }
+              }
+            ]
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219201000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c39",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "i1",
+                "title": "아침 인사",
+                "sceneId": "aurora",
+                "durationSec": 10
+              },
+              {
+                "id": "i2",
+                "title": "신메뉴",
+                "sceneId": "waves",
+                "durationSec": 20
+              },
+              {
+                "id": "i3",
+                "title": "이벤트",
+                "sceneId": "grid",
+                "durationSec": 30
+              }
+            ]
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "schedule.replaced",
+              "schedule": {
+                "items": [
+                  {
+                    "id": "i1",
+                    "title": "아침 인사",
+                    "sceneId": "aurora",
+                    "durationSec": 10
+                  },
+                  {
+                    "id": "i2",
+                    "title": "신메뉴",
+                    "sceneId": "waves",
+                    "durationSec": 20
+                  },
+                  {
+                    "id": "i3",
+                    "title": "이벤트",
+                    "sceneId": "grid",
+                    "durationSec": 30
+                  }
+                ]
+              },
+              "scheduleVersion": 1,
+              "deviceId": "d-test",
+              "version": 1,
+              "serverTimeMs": 1795219201000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c40",
+            "type": "volume.set",
+            "volume": 101
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c41",
+            "type": "volume.set",
+            "volume": -1
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c42",
+            "type": "override.set",
+            "text": "   "
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c43",
+            "type": "override.set",
+            "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c44",
+            "type": "override.set",
+            "text": "정상",
+            "durationSec": 0
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c45",
+            "type": "playback.seek",
+            "positionMs": -1
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c46",
+            "type": "playback.next",
+            "fromItemId": "i2"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "stale"
+          }
+        }
+      ],
+      "probes": [
+        {
+          "atMs": 1795219202000,
+          "itemId": "i1",
+          "offsetInItemMs": 1000
+        },
+        {
+          "atMs": 1795219300000,
+          "itemId": "i3",
+          "offsetInItemMs": 9000
+        }
+      ],
+      "finalState": {
+        "deviceId": "d-test",
+        "version": 1,
+        "scheduleVersion": 1,
+        "schedule": {
+          "items": [
+            {
+              "id": "i1",
+              "title": "아침 인사",
+              "sceneId": "aurora",
+              "durationSec": 10
+            },
+            {
+              "id": "i2",
+              "title": "신메뉴",
+              "sceneId": "waves",
+              "durationSec": 20
+            },
+            {
+              "id": "i3",
+              "title": "이벤트",
+              "sceneId": "grid",
+              "durationSec": 30
+            }
+          ]
+        },
+        "playback": {
+          "anchorMs": 1795219201000,
+          "positionMs": 0,
+          "paused": false
+        },
+        "volume": 50,
+        "override": null
+      }
+    },
+    {
+      "name": "empty-schedule",
+      "note": "편성표가 비어 있으면 재생할 것이 없다. 다음·이동·이동 시도는 invalid, 일시정지는 위치 0",
+      "deviceId": "d-test",
+      "steps": [
+        {
+          "nowMs": 1795219200000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c47",
+            "type": "playback.next",
+            "fromItemId": "i1"
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219201000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c48",
+            "type": "playback.seek",
+            "positionMs": 0
+          },
+          "expect": {
+            "result": "rejected",
+            "reason": "invalid"
+          }
+        },
+        {
+          "nowMs": 1795219202000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c49",
+            "type": "playback.pause"
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "playback.changed",
+              "reason": "pause",
+              "positionMs": 0,
+              "paused": true,
+              "deviceId": "d-test",
+              "version": 1,
+              "serverTimeMs": 1795219202000,
+              "actor": "op-a"
+            }
+          }
+        },
+        {
+          "nowMs": 1795219203000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c50",
+            "type": "override.set",
+            "text": "긴급",
+            "durationSec": 5
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "override.set",
+              "text": "긴급",
+              "untilMs": 1795219208000,
+              "deviceId": "d-test",
+              "version": 2,
+              "serverTimeMs": 1795219203000,
+              "actor": "op-a"
+            }
+          }
+        }
+      ],
+      "probes": [
+        {
+          "atMs": 1795219203000,
+          "itemId": null,
+          "offsetInItemMs": null
+        },
+        {
+          "atMs": 1795219210000,
+          "itemId": null,
+          "offsetInItemMs": null
+        }
+      ],
+      "finalState": {
+        "deviceId": "d-test",
+        "version": 2,
+        "scheduleVersion": 0,
+        "schedule": {
+          "items": []
+        },
+        "playback": {
+          "anchorMs": 1795219202000,
+          "positionMs": 0,
+          "paused": true
+        },
+        "volume": 50,
+        "override": {
+          "text": "긴급",
+          "untilMs": 1795219208000
+        }
+      }
+    },
+    {
+      "name": "window-boundary",
+      "note": "시간대 경계(11:59:50 편성 후 12:00 를 지나감). 재생 대상이 바뀌면 같은 서버 시각에서 모든 기기가 같은 항목을 가리킨다",
+      "deviceId": "d-test",
+      "steps": [
+        {
+          "nowMs": 1795229990000,
+          "actor": "op-a",
+          "command": {
+            "commandId": "c51",
+            "type": "schedule.replace",
+            "baseScheduleVersion": 0,
+            "items": [
+              {
+                "id": "am",
+                "title": "오전 메뉴",
+                "sceneId": "dusk",
+                "durationSec": 10,
+                "window": {
+                  "fromMin": 540,
+                  "toMin": 720
+                }
+              },
+              {
+                "id": "pm",
+                "title": "오후 메뉴",
+                "sceneId": "pulse",
+                "durationSec": 20,
+                "window": {
+                  "fromMin": 720,
+                  "toMin": 1080
+                }
+              },
+              {
+                "id": "all",
+                "title": "하루 종일",
+                "sceneId": "grid",
+                "durationSec": 5
+              }
+            ]
+          },
+          "expect": {
+            "result": "accepted",
+            "event": {
+              "type": "schedule.replaced",
+              "schedule": {
+                "items": [
+                  {
+                    "id": "am",
+                    "title": "오전 메뉴",
+                    "sceneId": "dusk",
+                    "durationSec": 10,
+                    "window": {
+                      "fromMin": 540,
+                      "toMin": 720
+                    }
+                  },
+                  {
+                    "id": "pm",
+                    "title": "오후 메뉴",
+                    "sceneId": "pulse",
+                    "durationSec": 20,
+                    "window": {
+                      "fromMin": 720,
+                      "toMin": 1080
+                    }
+                  },
+                  {
+                    "id": "all",
+                    "title": "하루 종일",
+                    "sceneId": "grid",
+                    "durationSec": 5
+                  }
+                ]
+              },
+              "scheduleVersion": 1,
+              "deviceId": "d-test",
+              "version": 1,
+              "serverTimeMs": 1795229990000,
+              "actor": "op-a"
+            }
+          }
+        }
+      ],
+      "probes": [
+        {
+          "atMs": 1795229990000,
+          "itemId": "am",
+          "offsetInItemMs": 0
+        },
+        {
+          "atMs": 1795229999000,
+          "itemId": "am",
+          "offsetInItemMs": 9000
+        },
+        {
+          "atMs": 1795230000000,
+          "itemId": "pm",
+          "offsetInItemMs": 10000
+        },
+        {
+          "atMs": 1795230015000,
+          "itemId": "pm",
+          "offsetInItemMs": 0
+        },
+        {
+          "atMs": 1795230025000,
+          "itemId": "pm",
+          "offsetInItemMs": 10000
+        }
+      ],
+      "finalState": {
+        "deviceId": "d-test",
+        "version": 1,
+        "scheduleVersion": 1,
+        "schedule": {
+          "items": [
+            {
+              "id": "am",
+              "title": "오전 메뉴",
+              "sceneId": "dusk",
+              "durationSec": 10,
+              "window": {
+                "fromMin": 540,
+                "toMin": 720
+              }
+            },
+            {
+              "id": "pm",
+              "title": "오후 메뉴",
+              "sceneId": "pulse",
+              "durationSec": 20,
+              "window": {
+                "fromMin": 720,
+                "toMin": 1080
+              }
+            },
+            {
+              "id": "all",
+              "title": "하루 종일",
+              "sceneId": "grid",
+              "durationSec": 5
+            }
+          ]
+        },
+        "playback": {
+          "anchorMs": 1795229990000,
+          "positionMs": 0,
+          "paused": false
+        },
+        "volume": 50,
+        "override": null
+      }
+    }
+  ]
+}

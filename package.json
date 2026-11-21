@@ -1,0 +1,23 @@
+{
+  "name": "screenloop",
+  "private": true,
+  "version": "1.0.0",
+  "description": "매장 화면 동기화 모의 테스트: 기기 간 상태 동기화와 재생 기록 정산",
+  "packageManager": "npm@11.19.1",
+  "engines": { "node": ">=24 <25" },
+  "workspaces": ["packages/*", "apps/*", "web-demo", "e2e"],
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "5.1.1",
+    "fast-check": "4.10.3",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "yaml": "2.9.1",
+    "tsx": "4.23.15",
+    "openapi-typescript": "7.13.0",
+    "esbuild": "0.28.2",
+    "prettier": "3.10.1",
+    "eslint": "10.15.0",
+    "@types/node": "24.0.0"
+  }
+}

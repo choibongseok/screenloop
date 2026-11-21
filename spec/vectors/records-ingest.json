@@ -1,0 +1,224 @@
+{
+  "scenarios": [
+    {
+      "name": "resend-is-idempotent",
+      "note": "같은 일련번호를 다시 보내도 한 번만 센다. ackSeq 는 받은 가장 큰 번호",
+      "deviceId": "d-001",
+      "batches": [
+        {
+          "receivedAtMs": 1795230000000,
+          "clockOffsetMs": 0,
+          "records": [
+            {
+              "seq": 1,
+              "itemId": "i1",
+              "startedAtMs": 1795229940000,
+              "endedAtMs": 1795229950000
+            },
+            {
+              "seq": 2,
+              "itemId": "i1",
+              "startedAtMs": 1795229950000,
+              "endedAtMs": 1795229970000
+            },
+            {
+              "seq": 3,
+              "itemId": "i1",
+              "startedAtMs": 1795229970000,
+              "endedAtMs": 1795229990000
+            }
+          ],
+          "expect": {
+            "accepted": 3,
+            "duplicates": 0,
+            "quarantined": 0,
+            "ackSeq": 3
+          },
+          "firstSeenStatuses": [
+            "accepted",
+            "accepted",
+            "accepted"
+          ]
+        },
+        {
+          "receivedAtMs": 1795230005000,
+          "clockOffsetMs": 0,
+          "records": [
+            {
+              "seq": 2,
+              "itemId": "i1",
+              "startedAtMs": 1795229950000,
+              "endedAtMs": 1795229970000
+            },
+            {
+              "seq": 3,
+              "itemId": "i1",
+              "startedAtMs": 1795229970000,
+              "endedAtMs": 1795229990000
+            },
+            {
+              "seq": 4,
+              "itemId": "i1",
+              "startedAtMs": 1795229990000,
+              "endedAtMs": 1795229999000
+            }
+          ],
+          "expect": {
+            "accepted": 1,
+            "duplicates": 2,
+            "quarantined": 0,
+            "ackSeq": 4
+          },
+          "firstSeenStatuses": [
+            "accepted",
+            "accepted",
+            "accepted"
+          ]
+        },
+        {
+          "receivedAtMs": 1795230009000,
+          "clockOffsetMs": 0,
+          "records": [
+            {
+              "seq": 1,
+              "itemId": "i1",
+              "startedAtMs": 1795229940000,
+              "endedAtMs": 1795229950000
+            }
+          ],
+          "expect": {
+            "accepted": 0,
+            "duplicates": 1,
+            "quarantined": 0,
+            "ackSeq": 4
+          },
+          "firstSeenStatuses": [
+            "accepted"
+          ]
+        }
+      ],
+      "storedRows": 4
+    },
+    {
+      "name": "skewed-device-clock",
+      "note": "기기 시계가 20분 빠르다. 오프셋을 더해 서버 시각으로 맞추면 정상, 오프셋을 못 구한 기기(0)의 같은 기록은 미래 시각으로 보류",
+      "deviceId": "d-002",
+      "batches": [
+        {
+          "receivedAtMs": 1795230000000,
+          "clockOffsetMs": -1200000,
+          "records": [
+            {
+              "seq": 1,
+              "itemId": "i1",
+              "startedAtMs": 1795231140000,
+              "endedAtMs": 1795231170000
+            }
+          ],
+          "expect": {
+            "accepted": 1,
+            "duplicates": 0,
+            "quarantined": 0,
+            "ackSeq": 1
+          },
+          "firstSeenStatuses": [
+            "accepted"
+          ]
+        },
+        {
+          "receivedAtMs": 1795230000000,
+          "clockOffsetMs": 0,
+          "records": [
+            {
+              "seq": 2,
+              "itemId": "i1",
+              "startedAtMs": 1795231140000,
+              "endedAtMs": 1795231170000
+            }
+          ],
+          "expect": {
+            "accepted": 0,
+            "duplicates": 0,
+            "quarantined": 1,
+            "ackSeq": 2
+          },
+          "firstSeenStatuses": [
+            "quarantined:in_future"
+          ]
+        }
+      ],
+      "storedRows": 2
+    },
+    {
+      "name": "invalid-records",
+      "note": "끝이 시작보다 빠르거나 같음, 6시간 초과, 미래 시각은 보류(수집은 하되 정산에 쓰지 않음). 5분 이내 미래는 허용",
+      "deviceId": "d-003",
+      "batches": [
+        {
+          "receivedAtMs": 1795230000000,
+          "clockOffsetMs": 0,
+          "records": [
+            {
+              "seq": 1,
+              "itemId": "i1",
+              "startedAtMs": 1795229995000,
+              "endedAtMs": 1795229995000
+            },
+            {
+              "seq": 2,
+              "itemId": "i1",
+              "startedAtMs": 1795229995000,
+              "endedAtMs": 1795229991000
+            },
+            {
+              "seq": 3,
+              "itemId": "i1",
+              "startedAtMs": 1795204800000,
+              "endedAtMs": 1795228200000
+            },
+            {
+              "seq": 4,
+              "itemId": "i1",
+              "startedAtMs": 1795208400000,
+              "endedAtMs": 1795230000000
+            },
+            {
+              "seq": 5,
+              "itemId": "i1",
+              "startedAtMs": 1795230060000,
+              "endedAtMs": 1795230120000
+            },
+            {
+              "seq": 6,
+              "itemId": "i1",
+              "startedAtMs": 1795230100000,
+              "endedAtMs": 1795230299999
+            },
+            {
+              "seq": 7,
+              "itemId": "i1",
+              "startedAtMs": 1795230100000,
+              "endedAtMs": 1795230300001
+            }
+          ],
+          "expect": {
+            "accepted": 3,
+            "duplicates": 0,
+            "quarantined": 4,
+            "ackSeq": 7
+          },
+          "firstSeenStatuses": [
+            "quarantined:non_positive",
+            "quarantined:non_positive",
+            "quarantined:too_long",
+            "accepted",
+            "accepted",
+            "accepted",
+            "quarantined:in_future"
+          ]
+        }
+      ],
+      "storedRows": 7
+    }
+  ]
+}

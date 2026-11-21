@@ -1,0 +1,13 @@
+build/
+.gradle/
+.kotlin/
+**/build/
+node_modules/
+**/dist/
+.next/
+.test-results/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+.deploy/
