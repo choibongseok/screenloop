@@ -16,8 +16,8 @@
     <header class="top">
       <div class="crumb"><span class="word">screenloop</span><span class="slash">/</span><span class="path">매장 화면 콘텐츠 운영</span></div>
       <p class="banner" id="banner" role="note">
-        <strong>안내</strong> 서버 없이 브라우저에서 도는 모의 실행입니다. 기기들이 상태를 맞추는 규칙은 실제 제품과 같은 코드입니다. 요금 계산은 서버에서 미리 돌린 결과를 보여
-        줍니다.
+        <strong>안내</strong> 서버 없이 브라우저에서 도는 모의 실행입니다. 기기 쪽은 실제 제품과 같은 TypeScript 코드, 서버 쪽 규칙과 요금 계산은 실제 서버와 같은 Kotlin
+        코드입니다. 데이터베이스와 네트워크는 없습니다.
       </p>
       <button id="theme" class="ghost" type="button" aria-label="테마 전환(다크/라이트)">◐</button>
     </header>
@@ -75,6 +75,7 @@
             <select id="speed" aria-label="시간 속도">
               <option value="1">×1</option>
               <option value="4">×4</option>
+              <option value="10">×10</option>
             </select>
           </label>
         </div>
@@ -136,10 +137,53 @@
       </section>
 
       <section class="panel billing" id="p-billing" aria-labelledby="h-bill">
-        <h2 id="h-bill" class="ptitle">기록이 요금이 되는 과정 <span class="tag">서버에서 미리 돌린 결과</span></h2>
+        <h2 id="h-bill" class="ptitle">재생 기록이 요금이 되는 과정 <span class="tag">서버 코드(Kotlin)가 브라우저에서 계산</span></h2>
+        <h3 class="sub-h">지금 이 페이지에서 쌓인 기록으로 계산한 요금</h3>
         <p class="hint">
-          요금 계산은 서버(Kotlin) 코드가 합니다. 아래는 시험용 기록을 그 코드에 넣어 미리 돌려 저장해 둔 결과(<code>billing-run.json</code>)입니다. 위에서 방금 만든 기록과는
-          별개입니다. 요금제: 화면 1대 9,900원, 재생 100시간까지 시간당 100원, 100~300시간 80원, 300시간 초과 60원.
+          위에서 TV 와 PC 가 보낸 재생 기록을 서버와 같은 Kotlin 코드가 지금 계산합니다. 시간 속도를 높이면 요금이 더 빨리 쌓입니다. "11월 마감하기"를 누른 뒤에도 재생을 이어 가면,
+          마감 뒤에 도착한 11월 기록이 12월 정산서에 "조정" 줄로 들어갑니다.
+        </p>
+        <div class="actions">
+          <button class="ghost2" id="live-close" type="button" data-testid="live-close">11월 마감하기</button><span id="live-status" class="mono" data-testid="live-status"></span>
+        </div>
+        <div class="two-cols">
+          <div>
+            <h3 class="sub-h">2026-11 정산서 <span class="mono" id="live-nov-state"></span></h3>
+            <div class="scroll">
+              <table id="live-nov">
+                <thead>
+                  <tr>
+                    <th>구분</th>
+                    <th>내용</th>
+                    <th class="num">수량</th>
+                    <th class="num">금액</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3 class="sub-h">2026-12 정산서 미리보기</h3>
+            <div class="scroll">
+              <table id="live-dec">
+                <thead>
+                  <tr>
+                    <th>구분</th>
+                    <th>내용</th>
+                    <th class="num">수량</th>
+                    <th class="num">금액</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <h3 class="sub-h">시험 입력으로 서버 코드를 돌린 결과</h3>
+        <p class="hint">
+          시험용 재생 기록을 서버 코드(JVM)에 넣어 실제로 돌려 저장한 결과(<code>billing-run.json</code>)입니다. 위의 실시간 계산과 입력은 별개입니다. 요금제: 화면 1대 9,900원,
+          재생 100시간까지 시간당 100원, 100~300시간 80원, 300시간 초과 60원.
         </p>
         <div id="bill-picker" class="presets" role="radiogroup" aria-label="정산 사례"></div>
         <p class="sublabel" id="bill-note"></p>
@@ -181,7 +225,7 @@
             <p class="meta" id="bill-trace" aria-live="polite">줄을 누르면 그 금액의 근거가 된 날짜와 재생 기록 번호가 나옵니다.</p>
           </div>
         </div>
-        <h3 class="sub-h">실제 서버를 띄워 계산한 요금 <span class="tag">자동 시험</span></h3>
+        <h3 class="sub-h">실제 서버(PostgreSQL 포함)를 띄워 확인한 결과 <span class="tag">자동 시험</span></h3>
         <p class="hint" id="e2e-bill-note"></p>
         <div class="scroll">
           <table id="e2e-bill">
