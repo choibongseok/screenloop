@@ -79,7 +79,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 서버가 보내는 이벤트 스트림(SSE). 헤더 Last-Event-ID 로 끊긴 뒤 이어 받는다. */
+        /**
+         * 서버가 보내는 이벤트 스트림(SSE). 헤더 Last-Event-ID 로 끊긴 뒤 이어 받는다.
+         * @description 브라우저 EventSource 는 헤더를 못 붙이므로 플레이어는 deviceKey 쿼리로 기기 키를 보낼 수 있다.
+         */
         get: operations["streamEvents"];
         put?: never;
         post?: never;
@@ -631,7 +634,10 @@ export interface operations {
     };
     streamEvents: {
         parameters: {
-            query?: never;
+            query?: {
+                after?: number;
+                deviceKey?: string;
+            };
             header?: never;
             path: {
                 deviceId: components["parameters"]["DeviceId"];

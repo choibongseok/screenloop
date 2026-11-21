@@ -92,15 +92,27 @@ export class RecordQueue {
   }
 }
 
-/** 재생 중인 항목이 바뀌는 순간마다 지나간 항목의 기록을 만든다. 시각은 기기 시계(서버 시각으로 맞추는 것은 서버 몫). */
+/**
+ * 재생 중인 항목이 바뀌는 순간마다 지나간 항목의 기록을 만든다. 시각은 기기 시계(서버 시각으로 맞추는 것은 서버 몫).
+ * 한 항목만 계속 도는 경우에도 기록이 쌓이도록 maxSegmentMs 마다 끊어서 낸다.
+ * boundaryMs 는 항목이 실제로 바뀐 시각이다(관측이 늦었을 때 "지금"이 아니라 경계로 끊는다).
+ */
 export class PlayTracker {
   private current: { itemId: string; startedAtMs: number } | null = null;
-  constructor(private readonly emit: (itemId: string, startedAtMs: number, endedAtMs: number) => void) {}
+  constructor(private readonly emit: (itemId: string, startedAtMs: number, endedAtMs: number) => void, private readonly maxSegmentMs = 10 * 60 * 1000) {}
 
-  observe(itemId: string | null, localMs: number): void {
-    if (this.current && this.current.itemId === itemId) return;
-    if (this.current && localMs > this.current.startedAtMs) this.emit(this.current.itemId, this.current.startedAtMs, localMs);
-    this.current = itemId ? { itemId, startedAtMs: localMs } : null;
+  get active(): boolean { return this.current !== null; }
+  get activeStartMs(): number { return this.current?.startedAtMs ?? 0; }
+
+  observe(itemId: string | null, localMs: number, boundaryMs: number = localMs): void {
+    const cur = this.current;
+    if (cur && cur.itemId === itemId) {
+      if (localMs - cur.startedAtMs >= this.maxSegmentMs) { this.emit(cur.itemId, cur.startedAtMs, localMs); this.current = { itemId: cur.itemId, startedAtMs: localMs }; }
+      return;
+    }
+    const at = cur ? Math.max(cur.startedAtMs, Math.min(boundaryMs, localMs)) : localMs;
+    if (cur && at > cur.startedAtMs) this.emit(cur.itemId, cur.startedAtMs, at);
+    this.current = itemId ? { itemId, startedAtMs: at } : null;
   }
 
   /** 일시정지·화면 종료처럼 재생이 멈출 때 지금까지를 끊는다 */

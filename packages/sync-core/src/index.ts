@@ -5,3 +5,4 @@ export * from './authority';
 export * from './replica';
 export * from './clock';
 export * from './records';
+export * from './client';
