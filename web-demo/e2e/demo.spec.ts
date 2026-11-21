@@ -166,7 +166,7 @@ test('설명 따라가기 3~4장은 고장을 실제로 일으켜 보관·스냅
 });
 
 test('390px 모바일: 가로 스크롤이 없고 설명은 아래 시트로 열린다', async ({ browser }) => {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, isMobile: true });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } });
   const page = await ctx.newPage();
   await page.goto('./');
   await expect(page.locator('body[data-ready="true"]')).toBeAttached();

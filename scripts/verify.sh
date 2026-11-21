@@ -13,10 +13,14 @@ kt() { # Kotlin 시험을 돌리고 결과 XML 을 모아 둔다(다음 실행�
 }
 
 step "1. 형식·린트·타입 검사"
-npx prettier --check "{packages,apps,web-demo,e2e,scripts}/**/*.{ts,tsx,mjs,css}" >/dev/null && echo "prettier 통과"
-npx eslint . && echo "eslint 통과"
-for d in packages/sync-core apps/web apps/player web-demo; do (cd "$d" && npx tsc --noEmit) && echo "tsc 통과: $d"; done
-bash scripts/gradle.sh :server:compileKotlin :server:compileTestKotlin -q && echo "kotlin 컴파일 통과"
+npx prettier --check "{packages,apps,web-demo,e2e,scripts}/**/*.{ts,tsx,mjs,css}" >/dev/null
+echo "prettier 통과"
+npx eslint .
+echo "eslint 통과"
+for d in packages/sync-core apps/web apps/player web-demo; do (cd "$d" && npx tsc --noEmit)
+  echo "tsc 통과: $d"; done
+bash scripts/gradle.sh :server:compileKotlin :server:compileTestKotlin -q
+echo "kotlin 컴파일 통과"
 
 step "2. 명세와 생성물(이벤트 스키마·TS 타입) 일치"
 node scripts/spec-export.mjs --check

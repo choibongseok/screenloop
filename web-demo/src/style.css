@@ -826,3 +826,13 @@ tbody th,
 td:first-child {
   white-space: nowrap;
 }
+.two-logs > *,
+.two-cols > * {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .two-logs,
+  .two-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -10,7 +10,10 @@ const root = resolve('.');
 
 // vitest json
 function vitest(file) {
-  if (!existsSync(file)) { problems.push(`${file} 가 없음: make verify 로 테스트를 먼저 실행해야 함`); return; }
+  if (!existsSync(file)) {
+    problems.push(`${file} 가 없음: make verify 로 테스트를 먼저 실행해야 함`);
+    return;
+  }
   for (const f of JSON.parse(readFileSync(file, 'utf8')).testResults) {
     for (const a of f.assertionResults) actual.set(`${relative(root, f.name)}::${a.fullName}`, a.status);
   }
@@ -19,24 +22,34 @@ vitest('.test-results/sync-core.json');
 vitest('.test-results/web.json');
 
 // JUnit XML(Kotlin): 클래스 이름 -> 소스 파일
-function walk(dir) { return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)])); }
+function walk(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
+}
 const classFile = new Map();
-for (const f of walk('server/src/test/kotlin').filter((x) => x.endsWith('.kt'))) for (const m of readFileSync(f, 'utf8').matchAll(/^(?:abstract )?class (\w+)/gm)) classFile.set(m[1], f);
+for (const f of walk('server/src/test/kotlin').filter((x) => x.endsWith('.kt')))
+  for (const m of readFileSync(f, 'utf8').matchAll(/^(?:abstract )?class (\w+)/gm)) classFile.set(m[1], f);
 const kdir = '.test-results/kotlin';
 if (!existsSync(kdir)) problems.push(`${kdir} 가 없음`);
-else for (const f of readdirSync(kdir).filter((x) => x.endsWith('.xml'))) {
-  const text = readFileSync(`${kdir}/${f}`, 'utf8');
-  for (const m of text.matchAll(/<testcase name="([^"]+)" classname="([^"]+)" time="[^"]+"(\/>|>([\s\S]*?)<\/testcase>)/g)) {
-    const cls = m[2].split('.').pop();
-    const file = classFile.get(cls);
-    if (!file) { problems.push(`${m[2]}: 소스에서 클래스를 찾지 못함`); continue; }
-    actual.set(`${file}::${m[1].replace(/\(\)$/, '')}`, /<failure|<error/.test(m[4] ?? '') ? 'failed' : /<skipped/.test(m[4] ?? '') ? 'skipped' : 'passed');
+else
+  for (const f of readdirSync(kdir).filter((x) => x.endsWith('.xml'))) {
+    const text = readFileSync(`${kdir}/${f}`, 'utf8');
+    for (const m of text.matchAll(/<testcase name="([^"]+)" classname="([^"]+)" time="[^"]+"(\/>|>([\s\S]*?)<\/testcase>)/g)) {
+      const cls = m[2].split('.').pop();
+      const file = classFile.get(cls);
+      if (!file) {
+        problems.push(`${m[2]}: 소스에서 클래스를 찾지 못함`);
+        continue;
+      }
+      actual.set(`${file}::${m[1].replace(/\(\)$/, '')}`, /<failure|<error/.test(m[4] ?? '') ? 'failed' : /<skipped/.test(m[4] ?? '') ? 'skipped' : 'passed');
+    }
   }
-}
 
 // Playwright json
 function playwright(file, prefix) {
-  if (!existsSync(file)) { problems.push(`${file} 가 없음`); return; }
+  if (!existsSync(file)) {
+    problems.push(`${file} 가 없음`);
+    return;
+  }
   const w = (s) => {
     for (const sp of s.specs ?? []) actual.set(`${prefix}${sp.file}::${sp.title}`, sp.ok ? 'passed' : 'failed');
     for (const sub of s.suites ?? []) w(sub);
@@ -46,7 +59,8 @@ function playwright(file, prefix) {
 playwright('.test-results/e2e.json', 'e2e/tests/');
 playwright('.test-results/demo.json', 'web-demo/e2e/');
 
-const kindOf = (f) => (f.startsWith('server/src/test/') ? (/(IT|MigrationTest)\.kt$/.test(f) ? 'integration' : 'unit') : f.startsWith('e2e/') || f.startsWith('web-demo/e2e/') ? 'e2e' : 'unit');
+const kindOf = (f) =>
+  f.startsWith('server/src/test/') ? (/(IT|MigrationTest)\.kt$/.test(f) ? 'integration' : 'unit') : f.startsWith('e2e/') || f.startsWith('web-demo/e2e/') ? 'e2e' : 'unit';
 
 if (process.argv.includes('--list')) {
   for (const k of [...actual.keys()].sort()) console.log(`${kindOf(k.split('::')[0])}\t${k}`);
@@ -54,12 +68,18 @@ if (process.argv.includes('--list')) {
 }
 
 const doc = readFileSync('docs/TEST_CASES.md', 'utf8');
-const rows = doc.split('\n').filter((l) => /^\| [A-Z]+-\d{3} \|/.test(l)).map((l) => l.split(' | ').map((c) => c.replace(/^\| /, '').replace(/ \|$/, '').trim()));
+const rows = doc
+  .split('\n')
+  .filter((l) => /^\| [A-Z]+-\d{3} \|/.test(l))
+  .map((l) => l.split(' | ').map((c) => c.replace(/^\| /, '').replace(/ \|$/, '').trim()));
 const perKind = { unit: 0, integration: 0, e2e: 0 };
 const ids = new Set();
 const mapped = new Set();
 for (const cells of rows) {
-  if (cells.length !== 7) { problems.push(`열 수가 7 이 아님: ${cells[0]}`); continue; }
+  if (cells.length !== 7) {
+    problems.push(`열 수가 7 이 아님: ${cells[0]}`);
+    continue;
+  }
   const [id, , , , , ref, kind] = cells;
   if (ids.has(id)) problems.push(`ID 중복: ${id}`);
   ids.add(id);

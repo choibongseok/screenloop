@@ -1,0 +1,25 @@
+{
+  "generatedBy": "e2e: compose 로 올린 실제 서버·플레이어가 만든 재생 기록으로 월을 마감한 결과",
+  "month": "2026-11",
+  "totalWon": 9900,
+  "lines": [
+    {
+      "kind": "screen",
+      "description": "화면 1대 기본료",
+      "quantity": 1,
+      "unitWon": 9900,
+      "amountWon": 9900,
+      "dailyRows": 1,
+      "sourceRecords": 3
+    },
+    {
+      "kind": "usage_tier",
+      "description": "재생 0~100시간 구간",
+      "quantity": 11,
+      "unitWon": 100,
+      "amountWon": 0,
+      "dailyRows": 1,
+      "sourceRecords": 3
+    }
+  ]
+}
