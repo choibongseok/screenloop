@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DeviceAuthority, RecordLedger, classifyRecord, nowPlaying, type Command, type StateEvent } from '../src/index';
+import { nowPlaying, type Command, type StateEvent } from '../src/index';
+import { DeviceAuthority, RecordLedger, classifyRecord } from './fakeServer';
 import { readJson, schemaValidator } from './support';
 
 const authority = readJson('spec/vectors/sync-authority.json');

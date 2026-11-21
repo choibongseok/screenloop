@@ -10,7 +10,11 @@ const dist = resolve(root, 'dist');
 if (existsSync(dist)) rmSync(dist, { recursive: true });
 mkdirSync(resolve(dist, 'data'), { recursive: true });
 
+const kotlinJs = resolve(repo, 'build/domain-js/screenloop-domain.mjs');
+if (!existsSync(kotlinJs)) throw new Error('build/domain-js/screenloop-domain.mjs 가 없음: bash scripts/build-domain-js.sh 를 먼저 실행해야 함');
+
 await build({
+  alias: { 'kotlin-domain': kotlinJs },
   entryPoints: [resolve(root, 'src/main.ts')],
   bundle: true,
   format: 'esm',

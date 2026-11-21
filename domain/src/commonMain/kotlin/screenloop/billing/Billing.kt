@@ -34,13 +34,36 @@ data class InvoiceCalc(val month: String, val lines: List<CalcLine>, val totalWo
 object Billing {
     /** 서버 시각(ms)이 속한 한국 날짜 yyyy-MM-dd */
     fun dayOf(ms: Long): String {
-        val d = java.time.LocalDate.ofEpochDay(Math.floorDiv(ms + KST_OFFSET_MS, DAY_MS))
-        return d.toString()
+        val (y, m, d) = civilFromDays((ms + KST_OFFSET_MS).floorDiv(DAY_MS))
+        return "${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}"
+    }
+
+    /** 1970-01-01 기준 일수 → (연, 월, 일). 플랫폼 날짜 라이브러리 없이 계산한다(JVM·JS 공통). */
+    private fun civilFromDays(days: Long): Triple<Int, Int, Int> {
+        val z = days + 719468
+        val era = z.floorDiv(146097L)
+        val doe = z - era * 146097
+        val yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+        val doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+        val mp = (5 * doy + 2) / 153
+        val d = (doy - (153 * mp + 2) / 5 + 1).toInt()
+        val m = (if (mp < 10) mp + 3 else mp - 9).toInt()
+        val y = (yoe + era * 400 + (if (m <= 2) 1 else 0)).toInt()
+        return Triple(y, m, d)
+    }
+
+    private fun daysFromCivil(y0: Int, m: Int, d: Int): Long {
+        val y = (if (m <= 2) y0 - 1 else y0).toLong()
+        val era = y.floorDiv(400L)
+        val yoe = y - era * 400
+        val doy = (153 * (if (m > 2) m - 3 else m + 9) + 2) / 5 + d - 1
+        val doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+        return era * 146097 + doe - 719468
     }
 
     fun monthOf(day: String): String = day.substring(0, 7)
 
-    private fun dayStartMs(day: String): Long = java.time.LocalDate.parse(day).toEpochDay() * DAY_MS - KST_OFFSET_MS
+    private fun dayStartMs(day: String): Long = daysFromCivil(day.substring(0, 4).toInt(), day.substring(5, 7).toInt(), day.substring(8, 10).toInt()) * DAY_MS - KST_OFFSET_MS
 
     /** 겹치는 구간을 하나로 합친다. 맞닿은 구간도 합친다. */
     fun union(intervals: List<LongRange>): List<LongRange> {
@@ -61,21 +84,21 @@ object Billing {
      */
     fun dailyUsage(records: List<BillRecord>): List<UsageDay> {
         val out = ArrayList<UsageDay>()
-        for ((device, recs) in records.groupBy { it.deviceId }.toSortedMap()) {
+        for ((device, recs) in records.groupBy { it.deviceId }.entries.sortedBy { it.key }) {
             // 닫힌 구간으로 다루기 위해 end-1 을 끝으로 쓴다
             val merged = union(recs.filter { it.endMs > it.startMs }.map { it.startMs..(it.endMs - 1) })
-            val perDay = java.util.TreeMap<String, Long>()
+            val perDay = LinkedHashMap<String, Long>()
             for (iv in merged) {
                 var cur = iv.first
                 while (cur <= iv.last) {
                     val day = dayOf(cur)
                     val dayEnd = dayStartMs(day) + DAY_MS - 1
                     val pieceEnd = minOf(iv.last, dayEnd)
-                    perDay.merge(day, pieceEnd - cur + 1, Long::plus)
+                    perDay[day] = (perDay[day] ?: 0L) + (pieceEnd - cur + 1)
                     cur = pieceEnd + 1
                 }
             }
-            for ((day, ms) in perDay) {
+            for ((day, ms) in perDay.entries.sortedBy { it.key }) {
                 val s = dayStartMs(day)
                 val e = s + DAY_MS - 1
                 val ids = recs.filter { it.endMs > it.startMs && it.startMs <= e && (it.endMs - 1) >= s }.map { it.id }.sorted()

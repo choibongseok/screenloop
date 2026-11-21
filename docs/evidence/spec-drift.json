@@ -22,7 +22,7 @@
       "where": "server/src/main/kotlin/screenloop/api/Api.kt",
       "command": "gradlew :server:test --tests *ContractIT",
       "exitCode": 1,
-      "excerpt": "ContractIT > everyOperationResponseMatchesTheSpec() FAILED\norg.opentest4j.AssertionFailedError: GET /api/devices/{deviceId}/snapshot 응답이 명세(Snapshot)와 다름: {\"state\":{\"deviceId\":\"d-001\",\"version\":1,\"scheduleVersion\":1,\"schedule\":{\"items\":[{\"id\":\"welcome\",\"title\":\"환영 인사\",\"sceneId\":\"aurora\",\"\n> Task :server:test FAILED\nBUILD FAILED in 6s"
+      "excerpt": "ContractIT > everyOperationResponseMatchesTheSpec() FAILED\norg.opentest4j.AssertionFailedError: GET /api/devices/{deviceId}/snapshot 응답이 명세(Snapshot)와 다름: {\"state\":{\"deviceId\":\"d-001\",\"version\":1,\"scheduleVersion\":1,\"schedule\":{\"items\":[{\"id\":\"welcome\",\"title\":\"환영 인사\",\"sceneId\":\"aurora\",\"\n> Task :server:test FAILED\nBUILD FAILED in 7s"
     }
   ]
 }

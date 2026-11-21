@@ -22,7 +22,7 @@ class SyncVectorsTest {
         var state = DeviceState.initial(deviceId)
         for ((i, step) in scn["steps"].withIndex()) {
             val label = "$name 단계 ${i + 1} ${step["command"]["type"].asText()}"
-            val cmd = CommandParser.parse(step["command"]) ?: error("$label: 명령을 읽지 못함")
+            val cmd = CommandParser.parse(kotlinx.serialization.json.Json.parseToJsonElement(step["command"].toString())) ?: error("$label: 명령을 읽지 못함")
             val now = step["nowMs"].asLong()
             val expect = step["expect"]
             when (val d = decide(state, cmd, now)) {

@@ -95,3 +95,16 @@ fun reduce(state: DeviceState, ev: StateEvent): DeviceState = when (ev) {
     is OverrideSet -> state.copy(version = ev.version, override = Override(ev.text, ev.untilMs))
     is OverrideCleared -> state.copy(version = ev.version, override = null)
 }
+
+/**
+ * 명령 한 건을 처리한다: 판정 → 이벤트 만들기(버전은 지금 상태 + 1) → 새 상태. 서버(DB 저장)와 데모(메모리)가 같은 이 함수를 쓴다.
+ * 같은 commandId 를 다시 받았을 때 처음 결과를 돌려주는 일은 저장소가 다르므로 호출하는 쪽이 한다.
+ */
+fun step(state: DeviceState, cmd: Command, nowMs: Long, actor: String): Step = when (val d = decide(state, cmd, nowMs)) {
+    is Accepted -> {
+        val ev = d.event(state.deviceId, state.version + 1, nowMs, actor)
+        val next = reduce(state, ev)
+        Step(CommandOutcome("accepted", null, next.version, false, ev), next)
+    }
+    is Rejected -> Step(CommandOutcome("rejected", d.reason.wire, state.version, false, null), state)
+}

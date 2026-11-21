@@ -8,6 +8,7 @@ root="$PWD"
 for f in docs/evidence/test-results.json docs/evidence/billing-run.json docs/evidence/e2e-billing.json docs/evidence/spec-drift.json; do
   [ -s "$f" ] || { echo "증거 파일이 없음: $f (make verify 를 먼저 실행)" >&2; exit 1; }
 done
+bash scripts/build-domain-js.sh
 node web-demo/build.mjs
 src_sha="$(git rev-parse --short HEAD)"
 wt="$(mktemp -d)"

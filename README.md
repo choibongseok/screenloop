@@ -8,6 +8,10 @@
 
 ![데모 사이트(다크, 1440px)](docs/demo-desktop-dark.png)
 
+서버 도메인(Kotlin)을 브라우저에서 돌려 계산한 요금: 11월 마감 뒤에 도착한 기록이 12월 정산서의 조정 줄로 들어간 모습입니다.
+
+![실시간 요금 계산](docs/demo-live-billing.png)
+
 | 라이트 | 1024px | 390px |
 |---|---|---|
 | ![라이트](docs/demo-desktop-light.png) | ![태블릿](docs/demo-tablet.png) | ![모바일](docs/demo-mobile.png) |
@@ -16,8 +20,8 @@
 
 | | 프론트엔드(TypeScript) | 서버(Kotlin) |
 |---|---|---|
-| 한 일 | Next.js 운영 웹(화면 목록·편성표 편집·원격 조작·묶음 조작·재생 기록과 정산 미리보기·정산 근거 추적), 휴대폰 리모컨, 웹 플레이어, 동기화 핵심 `sync-core`, 데모 사이트 | 화면 상태·편성표·조작 명령 API, 이벤트 로그와 SSE, 재생 기록 수집, 일·월 집계와 요금 계산, 정산서와 근거 추적, 마이그레이션 |
-| 시험 | 속성 기반 시험 포함 단위 시험, 웹 입력 검사, Playwright e2e | 같은 벡터로 판정·기록·정산 시험, 계약 시험, 실제 PostgreSQL·Redis 통합 시험 |
+| 한 일 | Next.js 운영 웹(화면 목록·편성표 편집·원격 조작·묶음 조작·재생 기록과 정산 미리보기·정산 근거 추적), 휴대폰 리모컨, 웹 플레이어, 동기화 핵심 `sync-core`, 데모 사이트(서버 쪽은 아래 Kotlin 코드를 JS 로 컴파일해 브라우저에서 실행) | 서버 도메인 모듈(Kotlin Multiplatform: 명령 판정·상태 전이·재생 기록 기준·요금 계산, JVM 과 JS 로 컴파일), Spring 서버(화면 상태·편성표·조작 명령 API, 이벤트 로그와 SSE, 재생 기록 수집, 정산서와 근거 추적, 마이그레이션) |
+| 시험 | 속성 기반 시험 포함 단위 시험, 웹 입력 검사, Playwright e2e, Kotlin 산출물을 JS 로 돌리는 공유 벡터 시험 | 같은 벡터로 판정·기록·정산 시험(JVM 과 JS), 계약 시험, 실제 PostgreSQL·Redis 통합 시험 |
 | 하지 않은 것 | React Native 앱(대신 같은 `sync-core` 를 쓰는 휴대폰 리모컨 웹 화면) | 결제사 연동, 실제 TV·셋톱 검증, 영상 인코딩·CDN |
 
 ## 구조
@@ -36,9 +40,12 @@ flowchart LR
     DEMO["web-demo<br/>가짜 서버로 같은 코드를 실행"]
     CORE --- WEB & PLAYER & DEMO
   end
-  subgraph KT["Kotlin·Spring Boot"]
-    API["server<br/>명령·SSE·기록 수집·정산"]
+  subgraph KT["Kotlin"]
+    DOM["domain (Kotlin Multiplatform)<br/>명령 판정·상태 전이·기록 기준·정산 계산"]
+    API["server (Spring Boot)<br/>명령·SSE·기록 수집·정산 저장"]
+    DOM --> API
   end
+  DOM -->|JS 로 컴파일| DEMO
   WEB -->|서버 액션·SSE 프록시| API
   PLAYER -->|SSE·기록 전송| API
   API --> PG[("PostgreSQL<br/>이벤트 로그·기록·정산")]
@@ -48,7 +55,7 @@ flowchart LR
   OA -.->|계약 테스트| API
 ```
 
-모노레포: `apps/web`, `apps/player`, `packages/sync-core`, `packages/scenes`(직접 만든 SVG 장면), `server`, `spec`, `web-demo`, `e2e`, `db/rollback`.
+모노레포: `apps/web`, `apps/player`, `packages/sync-core`, `packages/scenes`(직접 만든 SVG 장면), `domain`(Kotlin Multiplatform 서버 도메인), `server`(Spring Boot), `spec`, `web-demo`, `e2e`, `db/rollback`.
 
 ## 5분 실행
 
@@ -68,7 +75,7 @@ make up        # 이미지 빌드 후 compose 로 서버·웹·플레이어·Pos
 
 ## 설계 결정
 
-**상태를 누가 정하는가.** 화면 한 개의 상태(편성표, 지금 재생 항목과 위치, 일시정지, 음량, 긴급 공지)는 서버가 정합니다. 기기는 조작을 명령으로 보내고, 서버가 판정해 이벤트로 바꾼 뒤 모두에게 알립니다. 판정 규칙(`decide`)과 상태 전이(`reduce`)는 순수 함수이고 TypeScript 와 Kotlin 에 각각 있으며, 같은 시험 벡터를 통과해야 합니다.
+**상태를 누가 정하는가.** 화면 한 개의 상태(편성표, 지금 재생 항목과 위치, 일시정지, 음량, 긴급 공지)는 서버가 정합니다. 기기는 조작을 명령으로 보내고, 서버가 판정해 이벤트로 바꾼 뒤 모두에게 알립니다. 판정 규칙(`decide`), 상태 전이(`reduce`), 재생 기록 기준, 요금 계산은 서버 도메인 모듈(`domain/`, Kotlin Multiplatform) 한 곳에 있고 JVM(Spring 서버)과 JS(데모 사이트) 양쪽으로 컴파일됩니다. TypeScript 쪽에는 클라이언트가 서버 답을 기다리지 않고 먼저 보여 줄 때(낙관적 갱신) 쓰는 판정 사본만 있고, 같은 시험 벡터로 서버 규칙과 일치하는지 확인합니다.
 
 **버전과 스냅샷.** 이벤트에는 화면마다 1부터 빠짐없이 이어지는 버전이 붙습니다. 기기는 `현재 버전 + 1` 인 이벤트만 적용하고, 앞 번호가 안 온 이벤트는 보관했다가 앞 번호가 오면 이어서 적용하고, 이미 적용한 번호는 버립니다. 보관만 쌓이고 앞 번호가 오지 않으면 스냅샷(상태 전체)을 다시 받습니다. 서버 하트비트에는 최신 버전이 실려 있어서, 마지막 이벤트가 유실돼 빠진 구간이 보이지 않는 경우도 따라잡습니다. 속성 기반 시험이 "이벤트가 어떤 순서·중복으로 와도 끝 상태가 서버와 같다"를 무작위 명령열로 확인합니다.
 
@@ -82,6 +89,8 @@ make up        # 이미지 빌드 후 compose 로 서버·웹·플레이어·Pos
 
 **정산 근거 추적.** 마감할 때 일별 사용량(기기·날짜·정산 초·원본 기록 번호)을 집계 실행 단위로 저장하고, 정산 줄이 근거가 된 일별 사용량을 가리킵니다. `GET /api/invoice-lines/{id}/trace` 가 줄 → 일별 사용량 → 원본 재생 기록을 돌려주고 운영 웹에서도 열 수 있습니다. 같은 기기에서 겹치는 구간은 한 번만 세고, 자정(한국 시간)을 넘는 기록은 날짜별로 나눕니다. 구간 단가는 구간마다 버림이고 금액은 원 단위 정수입니다. 집계는 입력 순서와 무관하게 같은 결과를 냅니다.
 
+**서버 코드를 사이트에서 그대로 돌리는 방법.** `scripts/build-domain-js.sh` 가 `domain` 을 JavaScript 로 컴파일해 `build/domain-js/` 에 모으고, 데모 사이트가 그것을 불러 "브라우저 안의 서버"로 씁니다. JSON 으로 주고받는 얇은 입구(`domain/src/jsMain`)만 JS 전용입니다. `packages/sync-core/test/kotlin-js.test.ts` 가 이 산출물에 JVM 서버와 같은 공유 벡터를 넣어 같은 값이 나오는지 확인하고, 사이트 브라우저 시험도 같은 입력으로 페이지 안의 서버 코드를 확인합니다.
+
 **명세와 코드를 묶은 방법.** `spec/openapi.yaml` 이 기준입니다. TypeScript 타입과 `spec/events.schema.json` 은 여기서 생성하고(`make spec`), 생성물이 어긋나면 `make verify` 가 막습니다. 서버 응답은 `ContractIT` 가 명세 스키마로 검사하고, 명세의 모든 작업을 호출했는지도 확인합니다. 판정·기록 기준·정산 규칙은 `spec/vectors/*.json` 을 두 언어가 각자 읽어 같은 결과를 내야 합니다. 일부러 명세만, 코드만 바꿔 본 실행 결과는 [docs/SPEC_DRIFT.md](docs/SPEC_DRIFT.md) 와 데모 사이트에 있습니다.
 
 **서버·클라이언트 컴포넌트 경계(Next.js).** 목록·상세·기록·정산 페이지는 서버 컴포넌트가 서버 API 를 토큰 쿠키(httpOnly)로 읽어 그립니다. 실시간 상태와 조작이 필요한 부분(`DeviceGrid`, `DeviceConsole`, `ScheduleEditor`, `Remote`)만 클라이언트 컴포넌트입니다. 브라우저는 Kotlin 서버에 직접 가지 않고 Next 의 라우트 핸들러(스냅샷·SSE 프록시)와 서버 액션(조작·마감)을 거칩니다. 권한 판정은 항상 Kotlin 서버가 하고, 화면의 비활성 버튼은 안내일 뿐입니다.
@@ -92,7 +101,7 @@ make up        # 이미지 빌드 후 compose 로 서버·웹·플레이어·Pos
 
 1. 형식(prettier)·린트(eslint)·타입(tsc strict, Kotlin 컴파일)
 2. 명세와 생성물(이벤트 스키마·TS 타입) 일치
-3. 단위(TypeScript, Kotlin 순수 도메인)
+3. 단위(TypeScript, Kotlin 도메인을 JVM 과 JS 로 각각 실행)
 4. 계약(서버 응답 ↔ OpenAPI)
 5. 통합(실제 PostgreSQL·Redis)
 6. e2e(compose 전체 + Playwright: 운영 웹 조작 → 플레이어 두 대 일치, 끊김·재접속, 오프라인 재생 뒤 기록 수집 → 정산, 배포 되돌리기)
@@ -103,7 +112,7 @@ make up        # 이미지 빌드 후 compose 로 서버·웹·플레이어·Pos
 
 ## 테스트
 
-109건(unit 67, integration 16, e2e 26). 명령은 `make test`(단위·계약·통합), `make e2e`, `make verify`(전부). 모든 행이 실제 테스트와 1:1 이고 `make verify` 가 실행 결과와 대조합니다. [docs/TEST_CASES.md](docs/TEST_CASES.md)
+131건(unit 87, integration 16, e2e 28). 명령은 `make test`(단위·계약·통합), `make e2e`, `make verify`(전부). 모든 행이 실제 테스트와 1:1 이고 `make verify` 가 실행 결과와 대조합니다. [docs/TEST_CASES.md](docs/TEST_CASES.md)
 
 데모 사이트는 `make pages` 로 `gh-pages` 브랜치에 로컬 커밋합니다(push 는 하지 않습니다).
 
@@ -114,5 +123,5 @@ make up        # 이미지 빌드 후 compose 로 서버·웹·플레이어·Pos
 - 실제 TV·셋톱 기기에서는 검증하지 않았고 Chrome(웹 플레이어)에서만 돌려 봤습니다. React Native 앱은 만들지 않았습니다.
 - 재생 기록은 항목이 바뀌는 순간 끊습니다. 탭이 오래 멈춰 있다가 돌아오면 그 사이 건너뛴 항목은 기록되지 않습니다.
 - 정산은 계정 한 개, 요금제 한 개, 월 단위만 다룹니다. 결제 연동은 없습니다. 환율·세금 계산은 없습니다.
-- 데모 사이트의 서버는 브라우저 안의 가짜 서버입니다. 판정 규칙은 같은 TypeScript 구현이고 Kotlin 서버와의 일치는 공유 벡터로 확인합니다.
+- 데모 사이트에는 서버가 없습니다. 판정·이벤트 번호 부여·재생 기록 수집·요금 계산은 JVM 서버와 같은 Kotlin 도메인 코드를 JS 로 컴파일해 브라우저에서 돌리지만, 데이터베이스와 네트워크는 없고 상태는 메모리에만 있습니다. 클라이언트의 낙관적 갱신용 판정 사본(TypeScript)과 서버 규칙(Kotlin)은 두 벌이라, 공유 벡터가 일치를 지킵니다.
 - 부하 시험과 장기 운영은 해 보지 않았습니다.

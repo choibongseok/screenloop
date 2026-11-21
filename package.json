@@ -3,7 +3,6 @@
   "private": true,
   "version": "1.0.0",
   "description": "매장 화면 동기화 모의 테스트: 기기 간 상태 동기화와 재생 기록 정산",
-  "packageManager": "npm@11.19.1",
   "engines": {
     "node": ">=24 <25"
   },

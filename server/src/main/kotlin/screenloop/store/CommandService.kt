@@ -7,13 +7,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
-import screenloop.sync.Accepted
 import screenloop.sync.Command
 import screenloop.sync.DeviceState
-import screenloop.sync.Rejected
 import screenloop.sync.StateEvent
-import screenloop.sync.decide
-import screenloop.sync.reduce
+import screenloop.sync.step
 import java.time.Clock
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -33,17 +30,15 @@ class CommandService(private val repo: DeviceRepo, private val mapper: ObjectMap
         val state: DeviceState = repo.stateForUpdate(deviceId) ?: throw NoSuchElementException("없는 화면: $deviceId")
         repo.commandResult(deviceId, cmd.commandId)?.let { return mapper.readValue(it, CommandResultDto::class.java).copy(replayed = true) }
         val now = clock.millis()
-        val out = when (val d = decide(state, cmd, now)) {
-            is Accepted -> {
-                val ev = d.event(deviceId, state.version + 1, now, actor)
-                val next = reduce(state, ev)
-                repo.appendEvent(ev)
-                repo.updateState(next)
-                publishAfterCommit(deviceId, ev)
-                CommandResultDto("accepted", null, next.version, false, ev)
-            }
-            is Rejected -> CommandResultDto("rejected", d.reason.wire, state.version, false, null)
+        // 판정과 상태 전이는 도메인 모듈의 step() 그대로다(데모 사이트의 브라우저 서버도 같은 함수를 쓴다)
+        val s = step(state, cmd, now, actor)
+        val ev = s.outcome.event
+        if (ev != null) {
+            repo.appendEvent(ev)
+            repo.updateState(s.next)
+            publishAfterCommit(deviceId, ev)
         }
+        val out = CommandResultDto(s.outcome.result, s.outcome.reason, s.outcome.version, false, ev)
         repo.saveCommandResult(deviceId, cmd.commandId, mapper.writeValueAsString(out))
         return out
     }

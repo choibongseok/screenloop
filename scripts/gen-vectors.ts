@@ -1,7 +1,8 @@
 // 공유 시험 벡터를 만든다. 입력(명령·시각·기록)은 여기서 손으로 정하고, 기대값은 sync-core 구현이 낸 값을 사람이 읽어 확인한 뒤 고정한다.
 // 만든 파일은 spec/vectors/*.json 이고, TypeScript(vitest)와 Kotlin(JUnit)이 각자 읽어 같은 결과를 내야 통과한다.
 import { writeFileSync } from 'node:fs';
-import { DeviceAuthority, nowPlaying, classifyRecord, RecordLedger } from '../packages/sync-core/src/index';
+import { nowPlaying } from '../packages/sync-core/src/index';
+import { DeviceAuthority, RecordLedger, classifyRecord } from '../packages/sync-core/test/fakeServer';
 import type { Command } from '../packages/sync-core/src/index';
 
 const T0 = Date.UTC(2026, 10, 21, 0, 0, 0); // 한국 시간 09:00

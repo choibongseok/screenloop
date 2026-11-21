@@ -3,7 +3,7 @@ package screenloop.sync
 /** 시간대 편성의 기준: 한국 표준시(UTC+9). TypeScript sync-core 와 같다. */
 const val TZ_OFFSET_MIN = 540
 
-fun minuteOfDay(serverMs: Long): Int = (((Math.floorDiv(serverMs, 60000L) + TZ_OFFSET_MIN) % 1440 + 1440) % 1440).toInt()
+fun minuteOfDay(serverMs: Long): Int = (((serverMs.floorDiv(60000L) + TZ_OFFSET_MIN) % 1440 + 1440) % 1440).toInt()
 
 private fun inWindow(item: ScheduleItem, minute: Int): Boolean {
     val w = item.window ?: return true

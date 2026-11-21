@@ -1,5 +1,5 @@
 # Screenloop 진입점. push 전에는 `make verify` 가 0 으로 끝나야 한다.
-.PHONY: up down test test-unit test-int contract e2e spec verify pages demo-build
+.PHONY: up down test test-unit test-int contract e2e spec verify pages demo-build domain-js
 
 # 5분 실행: 이미지 빌드 → compose 로 전체 구성 기동 (운영 웹 http://127.0.0.1:59681, 플레이어 http://127.0.0.1:59682/?device=d-001)
 up:
@@ -21,9 +21,9 @@ spec:
 # 단위(TS: sync-core·플레이어·웹 헬퍼, Kotlin: 순수 도메인 벡터) + 계약 + 통합(실제 PostgreSQL·Redis, Docker 필요)
 test: test-unit contract test-int
 
-test-unit:
+test-unit: domain-js
 	npm run test -w @screenloop/sync-core -w @screenloop/web
-	bash scripts/gradle.sh :server:test --tests '*VectorsTest' --console=plain
+	bash scripts/gradle.sh :domain:jvmTest :domain:jsNodeTest --console=plain
 
 contract:
 	bash scripts/gradle.sh :server:test --tests '*ContractIT' --console=plain
@@ -35,7 +35,11 @@ test-int:
 e2e:
 	bash scripts/e2e.sh
 
-demo-build:
+# 서버 도메인(Kotlin)을 JS 로 컴파일한다(데모 사이트와 sync-core 시험이 쓴다)
+domain-js:
+	bash scripts/build-domain-js.sh
+
+demo-build: domain-js
 	node web-demo/build.mjs
 
 verify:

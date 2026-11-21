@@ -1,14 +1,14 @@
+import * as kotlin from 'kotlin-domain';
 import {
-  DeviceAuthority,
   DeviceClient,
   PlayerEngine,
-  RecordLedger,
   type Command,
   type CommandResult,
   type KeyValueStore,
   type PlayRecordBatch,
   type PlayRecordResult,
   type Snapshot,
+  type DeviceState,
   type StateEvent,
   type SyncTrace,
   type Transport,
@@ -77,9 +77,9 @@ export class Channel {
           if (this.beat) clearInterval(this.beat);
           // 서버는 일정 간격으로 하트비트에 최신 버전을 실어 보낸다
           this.beat = setInterval(() => {
-            if (this.handlers === h && this.connected) h.onHeartbeat?.(this.server.auth.state.version);
+            if (this.handlers === h && this.connected) h.onHeartbeat?.(this.server.version());
           }, 1500);
-          for (const ev of this.server.auth.eventsAfter(after)) h.onEvent(ev); // Last-Event-ID 이후는 서버가 먼저 채워 준다
+          for (const ev of this.server.eventsAfter(after)) h.onEvent(ev); // Last-Event-ID 이후는 서버가 먼저 채워 준다
         }, this.latencyMs);
         return () => {
           if (this.handlers === h) this.handlers = null;
@@ -162,13 +162,21 @@ export interface LogLine {
   tone: 'ok' | 'warn' | 'bad' | 'info';
 }
 
-/** 서버 흉내: 서버 쪽 판정 규칙(sync-core 의 권한자)과 재생 기록 수집 장치를 브라우저 안에서 돌린다. */
+export interface ServerNowPlaying {
+  itemId: string;
+  offsetInItemMs: number;
+  loopPositionMs: number;
+  loopLengthMs: number;
+}
+
+/**
+ * 브라우저 안의 "서버". 판정·이벤트 번호 부여·충돌 규칙·재생 기록 수집·요금 계산은 전부 실제 서버와 같은 Kotlin 도메인 코드(JS 로 컴파일한 산출물)가 하고,
+ * 여기서는 시계, 기기별 전달 통로(Channel), 응답 유실 흉내만 맡는다. 데이터베이스는 없다(상태는 Kotlin 객체가 메모리에 든다).
+ */
 export class FakeServer {
-  readonly auth = new DeviceAuthority('d-demo');
-  readonly ledger = new RecordLedger();
+  private readonly k = new kotlin.KotlinServer('d-demo');
   readonly channels = new Map<string, Channel>();
   readonly commandLog: LogLine[] = [];
-  duplicatesFiltered = 0;
   loseNextReply = false;
   repliesLost = 0;
 
@@ -189,18 +197,35 @@ export class FakeServer {
   }
 
   snapshot(): Snapshot {
-    return { state: structuredClone(this.auth.state), serverTimeMs: this.clock.now() };
+    return JSON.parse(this.k.snapshot(this.clock.now())) as Snapshot;
+  }
+
+  state(): DeviceState {
+    return JSON.parse(this.k.state()) as DeviceState;
+  }
+
+  version(): number {
+    return this.k.version();
+  }
+
+  eventsAfter(version: number): StateEvent[] {
+    return JSON.parse(this.k.eventsAfter(version)) as StateEvent[];
+  }
+
+  nowPlaying(ms: number): ServerNowPlaying | null {
+    return JSON.parse(this.k.nowPlaying(ms)) as ServerNowPlaying | null;
   }
 
   submit(cmd: Command, actor: string): CommandResult {
-    const r = this.auth.submit(cmd, this.clock.now(), actor);
+    const out = this.k.submit(JSON.stringify(cmd), actor, this.clock.now());
+    if (out === '') throw new Error('서버가 이해하지 못한 요청');
+    const r = JSON.parse(out) as CommandResult;
     if (r.event && !r.replayed) for (const ch of this.channels.values()) ch.deliver(r.event);
     return r;
   }
 
   ingest(deviceId: string, batch: PlayRecordBatch): PlayRecordResult {
-    const r = this.ledger.ingest(deviceId, batch.clockOffsetMs, batch.records, this.clock.now());
-    this.duplicatesFiltered += r.duplicates;
+    const r = JSON.parse(this.k.ingest(deviceId, JSON.stringify(batch), this.clock.now())) as PlayRecordResult;
     if (this.loseNextReply) {
       this.loseNextReply = false;
       this.repliesLost++;
@@ -208,6 +233,31 @@ export class FakeServer {
     } // 서버는 받았는데 응답이 유실
     return r;
   }
+
+  duplicatesFiltered(): number {
+    return this.k.duplicatesTotal();
+  }
+
+  records(): { status: string }[] {
+    return JSON.parse(this.k.records()) as { status: string }[];
+  }
+
+  /** 정산서(close 면 마감). 이미 마감한 달을 다시 마감하면 null */
+  invoice(month: string, close: boolean): LiveInvoice | null {
+    const out = this.k.invoice(month, this.clock.now(), close);
+    return out === '' ? null : (JSON.parse(out) as LiveInvoice);
+  }
+
+  isClosed(month: string): boolean {
+    return this.k.isClosed(month);
+  }
+}
+
+export interface LiveInvoice {
+  month: string;
+  status: string;
+  totalWon: number;
+  lines: { kind: string; description: string; quantity: number; unitWon: number | null; amountWon: number; adjustsMonth?: string; basisDays: string[] }[];
 }
 
 export class MemStore implements KeyValueStore {

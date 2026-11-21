@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DeviceAuthority, PlayerEngine, RecordLedger, type Command, type StateEvent, type Transport } from '../src/index';
+import { PlayerEngine, type Command, type StateEvent, type Transport } from '../src/index';
+import { DeviceAuthority, RecordLedger } from './fakeServer';
 
 const T0 = Date.UTC(2026, 10, 21, 0, 0, 0);
 let n = 0;

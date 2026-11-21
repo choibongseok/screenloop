@@ -1,5 +1,7 @@
 import { $ } from './dom';
 import { initEvidence } from './evidence';
+import * as kotlin from 'kotlin-domain';
+import { closeNovember, renderLive } from './live';
 import { KIND_LABEL, RECV_LABEL, World, type DeviceKind, type LogLine } from './sim';
 import { initTour, type TourStep } from './tour';
 import { buildDevices, renderLogs, renderRecords, renderResult, type CommandInput, type Ui } from './view';
@@ -145,6 +147,7 @@ function reset(): void {
   cmdLog.length = 0;
   since.clear();
   build();
+  renderLive(world);
 }
 $('#reset').addEventListener('click', reset);
 
@@ -168,7 +171,7 @@ const steps: TourStep[] = [
     title: '무엇을 만든 것인지',
     text: [
       '매장 화면 하나의 상태는 서버가 정합니다. 지금 무엇을 틀고 있는지, 어디까지 틀었는지, 멈췄는지, 음량, 긴급 공지입니다.',
-      '운영 웹, 휴대폰, TV, PC 는 서버가 보내는 변경 알림을 번호 순서대로 받아 따라갑니다. 요금 계산은 서버에서 미리 돌린 결과를 보여 줍니다.',
+      '운영 웹, 휴대폰, TV, PC 는 서버가 보내는 변경 알림을 번호 순서대로 받아 따라갑니다. 요금은 서버와 같은 Kotlin 코드가 계산합니다.',
     ],
     look: '맨 위 안내와 기기 네 대. 네 대가 같은 항목을 틀고 있습니다.',
     highlight: ['#banner', '#p-devices'],
@@ -268,10 +271,10 @@ const steps: TourStep[] = [
   {
     title: '재생 기록이 요금이 되는 과정',
     text: [
-      '요금은 서버가 계산합니다. 겹친 시간은 한 번만 세고, 자정을 넘기면 날짜별로 나누고, 시간 구간별 단가로 금액을 냅니다. 금액은 원 단위 정수입니다.',
+      '요금은 서버 코드(Kotlin)가 계산하고, 이 페이지에서도 같은 코드가 돕니다. 겹친 시간은 한 번만 세고, 자정을 넘기면 날짜별로 나누고, 시간 구간별 단가로 금액을 냅니다. 금액은 원 단위 정수입니다.',
       '마감한 달의 정산서는 고치지 않습니다. 마감 뒤에 늦게 도착한 기록은 다음 달 정산서에 "조정" 줄로 들어갑니다. 줄을 누르면 그 금액의 근거가 된 날짜와 기록 번호가 나옵니다.',
     ],
-    look: '요금 패널에서 "마감 뒤 늦은 기록"의 11월 정산서와 조정 줄.',
+    look: '요금 패널 맨 위의 실시간 계산, 그리고 아래 "마감 뒤 늦은 기록" 사례의 11월 정산서와 조정 줄.',
     highlight: ['#p-billing'],
     enter: () => {
       normalAll();
@@ -282,12 +285,20 @@ const steps: TourStep[] = [
 const tour = initTour(steps);
 void tour;
 
+let liveTick = 0;
+$('#live-close').addEventListener('click', () => {
+  closeNovember(world);
+  cmdLog.push({ at: world.clock.now(), who: '서버', text: '2026-11 을 마감함', tone: 'info' });
+  renderLive(world);
+});
+
 build();
 setInterval(() => {
   updateDevices();
   renderResult(world, since, ui);
   renderLogs(world, cmdLog);
   renderRecords(world);
+  if (++liveTick % 5 === 0) renderLive(world);
   const lr = $('#lose-reply');
   if (world.server.loseNextReply !== (lr.getAttribute('aria-pressed') === 'true')) lr.setAttribute('aria-pressed', String(world.server.loseNextReply));
 }, 200);
@@ -296,6 +307,7 @@ void initEvidence().then((e) => {
   document.body.dataset.ready = 'true';
 });
 (window as unknown as { __demo: unknown }).__demo = {
+  kotlin,
   get world() {
     return world;
   },

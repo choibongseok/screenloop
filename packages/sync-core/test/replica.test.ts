@@ -1,6 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { DeviceAuthority, Replica, initialState, reduce, type Command, type StateEvent } from '../src/index';
+import { Replica, initialState, reduce, type Command, type StateEvent } from '../src/index';
+import { DeviceAuthority } from './fakeServer';
 
 const T0 = Date.UTC(2026, 10, 21, 0, 0, 0);
 const items = [

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
 async function open(page: Page, query = '', firstVisit = false) {
@@ -27,7 +29,7 @@ test('첫 화면: 제목·문단·실행 범위 표시, 기기 네 대가 같은
   await expect(page.locator('.lead')).toContainText('재생 기록으로 월 요금을 계산합니다');
   await expect(page.locator('.lead')).not.toContainText('Kotlin');
   await expect(page.locator('#banner')).toContainText('서버 없이 브라우저에서 도는 모의 실행');
-  await expect(page.locator('#banner')).toContainText('미리 돌린 결과');
+  await expect(page.locator('#banner')).toContainText('실제 서버와 같은 Kotlin 코드');
   await allSame(page);
   await expect(page.locator('#verdict-title')).toHaveText('4대 모두 같은 화면을 보고 있습니다');
   expect(errors).toEqual([]);
@@ -177,4 +179,66 @@ test('390px 모바일: 가로 스크롤이 없고 설명은 아래 시트로 열
   expect(box!.y + box!.height).toBeGreaterThan(780);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await ctx.close();
+});
+
+const vector = (name: string) => JSON.parse(readFileSync(resolve(import.meta.dirname, '../../spec/vectors', name), 'utf8'));
+
+test('서버 쪽 판정과 요금 계산이 Kotlin 산출물에서 나온다: 공유 벡터와 같은 입력을 페이지의 서버 코드에 넣어 같은 값을 얻는다', async ({ page }) => {
+  await open(page);
+  expect(await page.evaluate(() => (window as unknown as { __demo: { kotlin: { engineName(): string } } }).__demo.kotlin.engineName())).toBe('kotlin-js');
+  // 판정: 벡터의 첫 사례를 페이지 안의 Kotlin 서버에 그대로 보낸다
+  const scn = vector('sync-authority.json').scenarios[0];
+  const outs = await page.evaluate(
+    ({ steps, deviceId }) => {
+      const k = (window as unknown as { __demo: { kotlin: { KotlinServer: new (id: string) => { submit(c: string, a: string, n: number): string } } } }).__demo.kotlin;
+      const s = new k.KotlinServer(deviceId);
+      return steps.map((st: { command: unknown; actor: string; nowMs: number }) => JSON.parse(s.submit(JSON.stringify(st.command), st.actor, st.nowMs)));
+    },
+    { steps: scn.steps, deviceId: scn.deviceId },
+  );
+  scn.steps.forEach((st: { expect: { result: string; reason?: string; event?: unknown } }, i: number) => {
+    expect(outs[i].result).toBe(st.expect.result);
+    if (st.expect.event) expect(outs[i].event).toEqual(st.expect.event);
+    else expect(outs[i].reason).toBe(st.expect.reason);
+  });
+  // 요금: 손으로 계산한 기대값(구간 단가 31,480원, 마감 뒤 조정 포함 20,150원)과 같다
+  for (const [name, totals] of [
+    ['tier-pricing', [31480]],
+    ['late-record-adjustment', [10000, 20150, 0]],
+  ] as const) {
+    const b = vector('billing.json').scenarios.find((x: { name: string }) => x.name === name);
+    const steps = await page.evaluate(
+      (json) => JSON.parse((window as unknown as { __demo: { kotlin: { runBillingScenario(j: string): string } } }).__demo.kotlin.runBillingScenario(json)),
+      JSON.stringify(b),
+    );
+    expect(steps.map((s: { totalWon: number }) => s.totalWon)).toEqual(totals);
+  }
+  // 페이지의 서버가 실제로 이 Kotlin 객체를 쓴다: 운영 웹 조작이 서버 상태 번호를 올린다
+  const before = await page.evaluate(() => (window as unknown as { __demo: { world: { server: { version(): number } } } }).__demo.world.server.version());
+  await page.getByTestId('web-next').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __demo: { world: { server: { version(): number } } } }).__demo.world.server.version())).toBe(before + 1);
+});
+
+test('방금 쌓인 재생 기록으로 요금이 실시간 계산되고, 11월 마감 뒤에 도착한 기록은 12월 정산서의 조정 줄이 된다', async ({ page }) => {
+  await open(page);
+  await page.locator('#speed').selectOption('10');
+  const total = async () =>
+    Number(
+      (await page
+        .getByTestId('live-nov-total')
+        .textContent()
+        .catch(() => '0'))!.replace(/[^\d]/g, '') || 0,
+    );
+  // TV 와 PC 가 보낸 기록이 모이면 기본료 2대분(19,800원)이 잡힌다
+  await expect.poll(total, { timeout: 40_000 }).toBeGreaterThanOrEqual(19_800);
+  await expect(page.getByTestId('live-nov-line-0')).toContainText('화면 2대 기본료');
+  const before = await total();
+  await expect.poll(async () => (await total()) >= before, { timeout: 5_000 }).toBe(true);
+  await expect(page.getByTestId('live-dec-total')).toHaveCount(0); // 마감 전에는 12월에 정산할 것이 없다
+  await page.getByTestId('live-close').click();
+  await expect(page.getByTestId('live-status')).toContainText('11월을 마감했습니다');
+  await expect(page.getByTestId('live-close')).toBeDisabled();
+  // 마감 뒤에도 재생이 이어져 기록이 도착하면 12월 정산서에 조정 줄이 생긴다
+  await expect(page.locator('#live-dec [data-kind="adjustment"]')).toBeVisible({ timeout: 40_000 });
+  await expect(page.locator('#live-dec [data-kind="adjustment"]')).toContainText('2026-11 마감 후 도착한 기록');
 });

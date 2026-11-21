@@ -1,17 +1,17 @@
 # 테스트 케이스
 
-모든 행은 실제 테스트 하나와 1:1 이고, `make verify` 가 실행 결과와 대조한다(행 수, 통과 여부, 종류, 요약 표). 아래 표는 TypeScript(vitest)·Kotlin(JUnit)·Playwright 의 실행 결과 파일에서 얻은 테스트 이름을 그대로 쓴다.
+모든 행은 실제 테스트 하나와 1:1 이고, `make verify` 가 실행 결과와 대조합니다(행 수, 통과 여부, 종류, 요약 표). 테스트 이름은 TypeScript(vitest)·Kotlin(JUnit, JVM·JS)·Playwright 의 실행 결과 파일에서 얻은 것을 그대로 씁니다. 서버 도메인의 공통 시험(`DomainTest`)은 JVM 과 JS 양쪽에서 같은 이름으로 통과해야 한 건으로 셉니다.
 
 ## 요약
 
 | 종류 | 개수 |
 |---|---|
-| unit (단위) | 67 |
+| unit (단위, 서버 도메인의 JVM·JS 시험 포함) | 87 |
 | integration (실제 PostgreSQL·Redis 포함, 계약 테스트 포함) | 16 |
-| e2e (compose 전체 + 브라우저, 데모 사이트 브라우저 시험 포함) | 26 |
-| **합계** | **109** |
+| e2e (compose 전체 + 브라우저, 데모 사이트 브라우저 시험 포함) | 28 |
+| **합계** | **131** |
 
-실행 명령: `make test`(단위·계약·통합), `make e2e`, `make verify`(전부). 영역 접두사: SYNC(동기화 핵심 TypeScript), SRV(서버 Kotlin), WEB(웹 헬퍼), FLOW(운영 웹·플레이어·배포 e2e), DEMO(데모 사이트).
+실행 명령: `make test`(단위·계약·통합), `make e2e`, `make verify`(전부). 영역 접두사: SYNC(동기화 핵심 TypeScript), KJS(Kotlin 서버 도메인을 JS 로 실행), SRV(서버 Kotlin), WEB(웹 헬퍼), FLOW(운영 웹·플레이어·배포 e2e), DEMO(데모 사이트).
 
 ## 동기화 핵심(`packages/sync-core`)과 공유 벡터
 
@@ -63,41 +63,66 @@
 | SYNC-044 | 공유 벡터(기록) | resend-is-idempotent | 같은 일련번호 재전송 | 수집 수·중복 수·ackSeq 가 벡터와 같음 | `packages/sync-core/test/vectors.test.ts::공유 벡터: 재생 기록 수집 (멱등·시계 차이·보류) resend-is-idempotent: 배치별 수집 결과와 보류 사유가 벡터와 같다` | unit |
 | SYNC-045 | 공유 벡터(기록) | skewed-device-clock | 시계 20분 빠른 기기, 오프셋 유무 | 오프셋을 더하면 정상, 없으면 미래로 보류 | `packages/sync-core/test/vectors.test.ts::공유 벡터: 재생 기록 수집 (멱등·시계 차이·보류) skewed-device-clock: 배치별 수집 결과와 보류 사유가 벡터와 같다` | unit |
 
-## 서버(Kotlin·Spring Boot)
+## 서버 도메인(Kotlin)을 JS 로 컴파일해 Node 에서 실행 (`packages/sync-core/test/kotlin-js.test.ts`)
 
 | ID | 영역 | 시나리오 | 입력/조건 | 기대 결과 | 자동화 테스트(파일::함수) | 종류(unit/integration/e2e) |
 |---|---|---|---|---|---|---|
-| SRV-001 | 정산 | 실제 실행 결과 파일 생성 | 정산 벡터 입력을 Billing 에 넣음 | docs/evidence/billing-run.json 작성, 정산 줄이 충분히 나옴 | `server/src/test/kotlin/screenloop/BillingEvidenceTest.kt::writeBillingRunEvidenceFromActualComputation` | unit |
-| SRV-002 | 정산 | 원 단위 정수와 구간별 버림 | 7,139초, 시간당 100원 | 198원(버림) | `server/src/test/kotlin/screenloop/BillingVectorsTest.kt::amountsAreIntegersAndRoundedDownPerTier` | unit |
-| SRV-003 | 정산 | 마감 뒤 늦은 기록 | 10월 마감 뒤 11/3 에 10월 기록 2건 도착 | 11월 정산서에 조정 10,150원, 근거 일별 사용량 연결 | `server/src/test/kotlin/screenloop/BillingVectorsTest.kt::lateRecordsBecomeAdjustmentLineInNextInvoice` | unit |
-| SRV-004 | 정산 | 겹침과 자정 | 겹치는 기록 3건, 자정을 넘는 기록, 길이 없는 기록 | 겹침은 한 번만 세고 날짜별로 나눔, 합계 10,050원 | `server/src/test/kotlin/screenloop/BillingVectorsTest.kt::overlapsAreCountedOnceAndMidnightIsSplit` | unit |
-| SRV-005 | 정산 | 집계 재실행 | 입력 순서를 섞어 다시 계산 | 결과가 같음 | `server/src/test/kotlin/screenloop/BillingVectorsTest.kt::rerunningTheAggregationGivesTheSameResult` | unit |
-| SRV-006 | 정산 | 구간 단가 | 121시간 재생, 화면 2대 | 31,480원(기본료 19,800 + 10,000 + 1,680) | `server/src/test/kotlin/screenloop/BillingVectorsTest.kt::tierPricing` | unit |
-| SRV-007 | 명령 처리 | 동시 명령의 버전 | 스레드 8개로 명령 24건 | 버전이 빠짐·겹침 없이 이어지고 이벤트 수와 같음 | `server/src/test/kotlin/screenloop/CommandIT.kt::concurrentCommandsGetContiguousVersionsAndNoGaps` | integration |
-| SRV-008 | 명령 처리 | 묶음 명령 | 묶음에 같은 음량 명령 | 화면마다 따로 판정(적용됨/이미 그 상태) | `server/src/test/kotlin/screenloop/CommandIT.kt::groupCommandAppliesToEveryDeviceWithSeparateOutcomes` | integration |
-| SRV-009 | 권한 | 서버 권한 검사 | 토큰 없음·위조, 보기 전용, 기기 키 | 401, 403, 자기 화면만 허용 | `server/src/test/kotlin/screenloop/CommandIT.kt::permissionsAreCheckedOnTheServer` | integration |
-| SRV-010 | 명령 처리 | 상대 명령과 commandId | 같은 항목에서 다음 두 번, 같은 commandId 재전송 | 두 번째 stale, 재전송은 replayed 이고 새 이벤트 없음 | `server/src/test/kotlin/screenloop/CommandIT.kt::relativeNextIsStaleForTheLaterOfTwoOperatorsAndSameCommandIdIsReplayed` | integration |
-| SRV-011 | 명령 처리 | 편성표 충돌 | 같은 버전 기준으로 두 번 저장 | 먼저 온 것 수락, 나중 것 conflict | `server/src/test/kotlin/screenloop/CommandIT.kt::scheduleReplaceUsesFirstWriterWins` | integration |
-| SRV-012 | 명령 처리 | 시작 시 시드 | 서버 기동 | 화면마다 이벤트 1번이 편성표 교체 | `server/src/test/kotlin/screenloop/CommandIT.kt::seededDevicesStartWithScheduleAtVersionOne` | integration |
-| SRV-013 | 스트림 | SSE 와 Last-Event-ID | 명령 후 Redis 경유 수신, 끊었다 Last-Event-ID 로 재연결 | 이벤트 수신, 놓친 이벤트가 순서대로 재생됨 | `server/src/test/kotlin/screenloop/CommandIT.kt::sseStreamDeliversEventsThroughRedisAndReplaysAfterLastEventId` | integration |
-| SRV-014 | 계약 | 오류 응답 스키마 | 401, 403, 404, 400 | Error 스키마와 같음 | `server/src/test/kotlin/screenloop/ContractIT.kt::errorResponsesFollowTheErrorSchema` | integration |
-| SRV-015 | 계약 | 모든 작업의 응답 | 명세의 모든 경로·메서드 호출 | 응답이 스키마와 같고 호출하지 않은 작업이 없음 | `server/src/test/kotlin/screenloop/ContractIT.kt::everyOperationResponseMatchesTheSpec` | integration |
-| SRV-016 | 계약 | 검증기 자체 | 필수 필드 제거, 추가 필드, 타입 변경 | 모두 실패해야 함 | `server/src/test/kotlin/screenloop/ContractIT.kt::theValidatorRejectsPayloadsThatDifferFromTheSpec` | integration |
-| SRV-017 | DB | 되돌리기 스크립트 1:1 | 마이그레이션 파일과 rollback 폴더 | 번호·이름이 1:1 | `server/src/test/kotlin/screenloop/MigrationTest.kt::everyMigrationHasARollbackScript` | integration |
-| SRV-018 | DB | 실제 되돌리기 | 최신 번호부터 되돌리기 스크립트 적용 후 재적용 | 테이블이 모두 사라지고 다시 올라감 | `server/src/test/kotlin/screenloop/MigrationTest.kt::rollbackScriptsUndoTheMigrationsAndTheyCanBeAppliedAgain` | integration |
-| SRV-019 | 기록 수집 | 시계 보정과 보류 | 시계 2시간 빠른 기기, 오프셋 0 기록, 길이 0·7시간 | 오프셋 더한 서버 시각 저장, 나머지 보류, 정산에서 제외 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::clockSkewedDeviceIsCorrectedAndImpossibleRecordsAreQuarantinedAndExcludedFromBilling` | integration |
-| SRV-020 | 정산 | 마감·조정·추적 | 1월 마감 후 늦은 기록 2건, 2월 마감 | 마감 정산서 불변, 조정 10,150원, 줄→일별→원본 기록 추적, 재반영 없음 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::monthCloseKeepsClosedInvoiceAndPutsLateRecordsIntoNextInvoiceAsAdjustmentWithTrace` | integration |
-| SRV-021 | 기록 수집 | 재전송 멱등 | 같은 배치 두 번 | 수락 5, 중복 5, ackSeq 5, DB 5건 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::resendingTheSameBatchDoesNotDuplicateRecords` | integration |
-| SRV-022 | 기록 수집 | 동시 중복 전송 | 같은 30건 배치를 6개 스레드로 | 수락 합 30, 중복 합 150, DB 30건 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::simultaneousIdenticalUploadsStillStoreEachRecordOnce` | integration |
-| SRV-023 | 기록 기준(벡터) | invalid-records | TS 와 같은 벡터 | 보류 사유가 TS 와 같음 | `server/src/test/kotlin/screenloop/RecordsVectorsTest.kt::invalidRecordsAreQuarantinedForTheSameReasons` | unit |
-| SRV-024 | 기록 기준(벡터) | resend-is-idempotent | TS 와 같은 벡터 | 분류가 TS 와 같음 | `server/src/test/kotlin/screenloop/RecordsVectorsTest.kt::resendClassificationMatches` | unit |
-| SRV-025 | 기록 기준(벡터) | skewed-device-clock | TS 와 같은 벡터 | 분류가 TS 와 같음 | `server/src/test/kotlin/screenloop/RecordsVectorsTest.kt::skewedClockIsCorrectedByOffset` | unit |
-| SRV-026 | 판정(벡터) | basic-playback | TS 와 같은 벡터 | 이벤트·끝 상태·위치가 TS 와 같음 | `server/src/test/kotlin/screenloop/SyncVectorsTest.kt::basicPlayback` | unit |
-| SRV-027 | 판정(벡터) | concurrent-operators | TS 와 같은 벡터 | TS 와 같음 | `server/src/test/kotlin/screenloop/SyncVectorsTest.kt::concurrentOperators` | unit |
-| SRV-028 | 판정(벡터) | empty-schedule | TS 와 같은 벡터 | TS 와 같음 | `server/src/test/kotlin/screenloop/SyncVectorsTest.kt::emptySchedule` | unit |
-| SRV-029 | 판정(벡터) | invalid-inputs | TS 와 같은 벡터 | TS 와 같음 | `server/src/test/kotlin/screenloop/SyncVectorsTest.kt::invalidInputs` | unit |
-| SRV-030 | 판정(벡터) | time-windows | TS 와 같은 벡터 | TS 와 같음 | `server/src/test/kotlin/screenloop/SyncVectorsTest.kt::timeWindows` | unit |
-| SRV-031 | 판정(벡터) | window-boundary | TS 와 같은 벡터 | TS 와 같음 | `server/src/test/kotlin/screenloop/SyncVectorsTest.kt::windowBoundary` | unit |
+| KJS-001 | Kotlin→JS | 스키마와 멱등 | 첫 사례의 모든 응답·이벤트·상태·스냅샷, 같은 commandId 재전송 | 모두 JSON Schema 통과, 재전송은 replayed | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 Kotlin 산출물이 낸 이벤트·상태·응답이 이벤트 스키마를 통과하고, 같은 commandId 는 처음 결과를 돌려준다` | unit |
+| KJS-002 | Kotlin→JS | 판정 벡터: basic-playback | 다음·일시정지·재개·이동·음량, 같은 상태 반복, stale | 단계별 결과·이벤트·끝 상태·재생 위치가 벡터와 같음 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 basic-playback: Kotlin 산출물이 낸 결과·이벤트·끝 상태·재생 위치가 벡터와 같다` | unit |
+| KJS-003 | Kotlin→JS | 판정 벡터: concurrent-operators | 두 운영자 동시 조작 | 다음은 늦은 쪽 stale, 편성표 conflict, 음량·공지는 마지막 도착 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 concurrent-operators: Kotlin 산출물이 낸 결과·이벤트·끝 상태·재생 위치가 벡터와 같다` | unit |
+| KJS-004 | Kotlin→JS | 판정 벡터: empty-schedule | 빈 편성표에서 조작 | invalid, 일시정지는 위치 0 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 empty-schedule: Kotlin 산출물이 낸 결과·이벤트·끝 상태·재생 위치가 벡터와 같다` | unit |
+| KJS-005 | Kotlin→JS | 판정 벡터: invalid-inputs | 잘못된 입력들 | 모두 invalid 로 거절 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 invalid-inputs: Kotlin 산출물이 낸 결과·이벤트·끝 상태·재생 위치가 벡터와 같다` | unit |
+| KJS-006 | Kotlin→JS | 기록 수집 벡터: invalid-records | 길이 0·음수·6시간 초과·미래 | 보류 사유와 수집 수가 벡터와 같음 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 invalid-records: Kotlin 산출물의 재생 기록 수집 결과가 벡터와 같다` | unit |
+| KJS-007 | Kotlin→JS | 정산 벡터: late-record-adjustment | 10월 마감 뒤 늦은 기록 2건 | 조정 10,150원, 근거 일별 사용량이 같음 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 late-record-adjustment: Kotlin 산출물의 정산 줄·금액·일별 사용량이 손으로 계산한 값과 같다` | unit |
+| KJS-008 | Kotlin→JS | 정산 벡터: overlap-and-midnight | 겹침·자정·길이 없는 기록 | 10,050원과 날짜별 초가 손 계산과 같음 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 overlap-and-midnight: Kotlin 산출물의 정산 줄·금액·일별 사용량이 손으로 계산한 값과 같다` | unit |
+| KJS-009 | Kotlin→JS | 기록 수집 벡터: resend-is-idempotent | 같은 일련번호 재전송 | 수집·중복·ackSeq 가 벡터와 같음 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 resend-is-idempotent: Kotlin 산출물의 재생 기록 수집 결과가 벡터와 같다` | unit |
+| KJS-010 | Kotlin→JS | 기록 수집 벡터: skewed-device-clock | 시계 20분 빠른 기기, 오프셋 유무 | 오프셋을 더하면 정상, 없으면 미래로 보류 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 skewed-device-clock: Kotlin 산출물의 재생 기록 수집 결과가 벡터와 같다` | unit |
+| KJS-011 | Kotlin→JS | 정산 벡터: tier-pricing | 121시간, 화면 2대 | 31,480원(손 계산)과 같음 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 tier-pricing: Kotlin 산출물의 정산 줄·금액·일별 사용량이 손으로 계산한 값과 같다` | unit |
+| KJS-012 | Kotlin→JS | 판정 벡터: time-windows | 시간대 편성(자정 넘김 포함) | 시간대 밖 항목으로 이동하면 invalid | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 time-windows: Kotlin 산출물이 낸 결과·이벤트·끝 상태·재생 위치가 벡터와 같다` | unit |
+| KJS-013 | Kotlin→JS | 판정 벡터: window-boundary | 11:59:50 편성 후 12:00 경과 | 위치가 서버 시각 기준으로 결정 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 window-boundary: Kotlin 산출물이 낸 결과·이벤트·끝 상태·재생 위치가 벡터와 같다` | unit |
+| KJS-014 | Kotlin→JS | 산출물 확인 | build/domain-js 모듈 불러오기 | engineName 이 kotlin-js 이고 KotlinServer 를 제공 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 산출물은 Kotlin/JS 로 컴파일된 모듈이다` | unit |
+| KJS-015 | Kotlin→JS | 잘못된 요청 | commandId 없음, 모르는 type, 깨진 JSON | 빈 응답 | `packages/sync-core/test/kotlin-js.test.ts::서버 도메인(Kotlin→JS 산출물): JVM 서버와 같은 공유 벡터 잘못된 요청(commandId 없음, 모르는 종류)은 빈 응답으로 알린다` | unit |
+
+## 서버 도메인과 Spring 서버(Kotlin)
+
+| ID | 영역 | 시나리오 | 입력/조건 | 기대 결과 | 자동화 테스트(파일::함수) | 종류(unit/integration/e2e) |
+|---|---|---|---|---|---|---|
+| SRV-001 | 서버 도메인 공통 | 정산 장부(메모리판) | 10월 마감 뒤 도착한 10월 기록 2시간 | 11월 정산서에 조정 200원 | `domain/src/commonTest/kotlin/screenloop/DomainTest.kt::billingBookPutsLateRecordsIntoNextMonthAsAdjustment` | unit |
+| SRV-002 | 서버 도메인 공통 | 명령 처리(메모리판) | 명령 3건, 같은 commandId 재전송 | 버전 1·2·3 이 이어지고 재전송은 replayed, 새 이벤트 없음 | `domain/src/commonTest/kotlin/screenloop/DomainTest.kt::deviceServerAssignsContiguousVersionsAndRepliesToRepeatedCommandId` | unit |
+| SRV-003 | 서버 도메인 공통 | JSON 모양 | 편성 이벤트와 상태를 JSON 으로 | type 필드 있음, 시간대가 없으면 window 생략, override 는 null 로 명시 | `domain/src/commonTest/kotlin/screenloop/DomainTest.kt::eventJsonUsesTypeFieldAndOmitsNullWindow` | unit |
+| SRV-004 | 서버 도메인 공통 | 기록 수집(메모리판) | 정상 1건, 길이가 음수 1건, 미래 1건을 두 번 전송 | 정상 1·보류 2, 재전송은 중복 3, ackSeq 3 | `domain/src/commonTest/kotlin/screenloop/DomainTest.kt::intakeCountsRepeatedSequenceNumbersOnceAndQuarantinesImpossibleRecords` | unit |
+| SRV-005 | 서버 도메인 공통 | 동시 "다음"과 unchanged | 같은 항목에서 다음 두 번, 일시정지 두 번 | 두 번째 다음은 stale, 두 번째 일시정지는 unchanged, 이벤트 수 유지 | `domain/src/commonTest/kotlin/screenloop/DomainTest.kt::secondNextFromTheSameItemIsStaleAndNoEventIsAdded` | unit |
+| SRV-006 | 정산 | 실제 실행 결과 파일 생성 | 정산 벡터 입력을 Billing 에 넣음 | docs/evidence/billing-run.json 작성, 정산 줄이 충분히 나옴 | `domain/src/jvmTest/kotlin/screenloop/BillingEvidenceTest.kt::writeBillingRunEvidenceFromActualComputation` | unit |
+| SRV-007 | 정산 | 원 단위 정수와 구간별 버림 | 7,139초, 시간당 100원 | 198원(버림) | `domain/src/jvmTest/kotlin/screenloop/BillingVectorsTest.kt::amountsAreIntegersAndRoundedDownPerTier` | unit |
+| SRV-008 | 정산 | 마감 뒤 늦은 기록 | 10월 마감 뒤 11/3 에 10월 기록 2건 도착 | 11월 정산서에 조정 10,150원, 근거 일별 사용량 연결 | `domain/src/jvmTest/kotlin/screenloop/BillingVectorsTest.kt::lateRecordsBecomeAdjustmentLineInNextInvoice` | unit |
+| SRV-009 | 정산 | 겹침과 자정 | 겹치는 기록 3건, 자정을 넘는 기록, 길이 없는 기록 | 겹침은 한 번만 세고 날짜별로 나눔, 합계 10,050원 | `domain/src/jvmTest/kotlin/screenloop/BillingVectorsTest.kt::overlapsAreCountedOnceAndMidnightIsSplit` | unit |
+| SRV-010 | 정산 | 집계 재실행 | 입력 순서를 섞어 다시 계산 | 결과가 같음 | `domain/src/jvmTest/kotlin/screenloop/BillingVectorsTest.kt::rerunningTheAggregationGivesTheSameResult` | unit |
+| SRV-011 | 정산 | 구간 단가 | 121시간 재생, 화면 2대 | 31,480원(기본료 19,800 + 10,000 + 1,680) | `domain/src/jvmTest/kotlin/screenloop/BillingVectorsTest.kt::tierPricing` | unit |
+| SRV-012 | 기록 기준(벡터) | invalid-records | TS 와 같은 벡터 | 보류 사유가 TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/RecordsVectorsTest.kt::invalidRecordsAreQuarantinedForTheSameReasons` | unit |
+| SRV-013 | 기록 기준(벡터) | resend-is-idempotent | TS 와 같은 벡터 | 분류가 TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/RecordsVectorsTest.kt::resendClassificationMatches` | unit |
+| SRV-014 | 기록 기준(벡터) | skewed-device-clock | TS 와 같은 벡터 | 분류가 TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/RecordsVectorsTest.kt::skewedClockIsCorrectedByOffset` | unit |
+| SRV-015 | 판정(벡터) | basic-playback | TS 와 같은 벡터 | 이벤트·끝 상태·위치가 TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/SyncVectorsTest.kt::basicPlayback` | unit |
+| SRV-016 | 판정(벡터) | concurrent-operators | TS 와 같은 벡터 | TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/SyncVectorsTest.kt::concurrentOperators` | unit |
+| SRV-017 | 판정(벡터) | empty-schedule | TS 와 같은 벡터 | TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/SyncVectorsTest.kt::emptySchedule` | unit |
+| SRV-018 | 판정(벡터) | invalid-inputs | TS 와 같은 벡터 | TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/SyncVectorsTest.kt::invalidInputs` | unit |
+| SRV-019 | 판정(벡터) | time-windows | TS 와 같은 벡터 | TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/SyncVectorsTest.kt::timeWindows` | unit |
+| SRV-020 | 판정(벡터) | window-boundary | TS 와 같은 벡터 | TS 와 같음 | `domain/src/jvmTest/kotlin/screenloop/SyncVectorsTest.kt::windowBoundary` | unit |
+| SRV-021 | 명령 처리 | 동시 명령의 버전 | 스레드 8개로 명령 24건 | 버전이 빠짐·겹침 없이 이어지고 이벤트 수와 같음 | `server/src/test/kotlin/screenloop/CommandIT.kt::concurrentCommandsGetContiguousVersionsAndNoGaps` | integration |
+| SRV-022 | 명령 처리 | 묶음 명령 | 묶음에 같은 음량 명령 | 화면마다 따로 판정(적용됨/이미 그 상태) | `server/src/test/kotlin/screenloop/CommandIT.kt::groupCommandAppliesToEveryDeviceWithSeparateOutcomes` | integration |
+| SRV-023 | 권한 | 서버 권한 검사 | 토큰 없음·위조, 보기 전용, 기기 키 | 401, 403, 자기 화면만 허용 | `server/src/test/kotlin/screenloop/CommandIT.kt::permissionsAreCheckedOnTheServer` | integration |
+| SRV-024 | 명령 처리 | 상대 명령과 commandId | 같은 항목에서 다음 두 번, 같은 commandId 재전송 | 두 번째 stale, 재전송은 replayed 이고 새 이벤트 없음 | `server/src/test/kotlin/screenloop/CommandIT.kt::relativeNextIsStaleForTheLaterOfTwoOperatorsAndSameCommandIdIsReplayed` | integration |
+| SRV-025 | 명령 처리 | 편성표 충돌 | 같은 버전 기준으로 두 번 저장 | 먼저 온 것 수락, 나중 것 conflict | `server/src/test/kotlin/screenloop/CommandIT.kt::scheduleReplaceUsesFirstWriterWins` | integration |
+| SRV-026 | 명령 처리 | 시작 시 시드 | 서버 기동 | 화면마다 이벤트 1번이 편성표 교체 | `server/src/test/kotlin/screenloop/CommandIT.kt::seededDevicesStartWithScheduleAtVersionOne` | integration |
+| SRV-027 | 스트림 | SSE 와 Last-Event-ID | 명령 후 Redis 경유 수신, 끊었다 Last-Event-ID 로 재연결 | 이벤트 수신, 놓친 이벤트가 순서대로 재생됨 | `server/src/test/kotlin/screenloop/CommandIT.kt::sseStreamDeliversEventsThroughRedisAndReplaysAfterLastEventId` | integration |
+| SRV-028 | 계약 | 오류 응답 스키마 | 401, 403, 404, 400 | Error 스키마와 같음 | `server/src/test/kotlin/screenloop/ContractIT.kt::errorResponsesFollowTheErrorSchema` | integration |
+| SRV-029 | 계약 | 모든 작업의 응답 | 명세의 모든 경로·메서드 호출 | 응답이 스키마와 같고 호출하지 않은 작업이 없음 | `server/src/test/kotlin/screenloop/ContractIT.kt::everyOperationResponseMatchesTheSpec` | integration |
+| SRV-030 | 계약 | 검증기 자체 | 필수 필드 제거, 추가 필드, 타입 변경 | 모두 실패해야 함 | `server/src/test/kotlin/screenloop/ContractIT.kt::theValidatorRejectsPayloadsThatDifferFromTheSpec` | integration |
+| SRV-031 | DB | 되돌리기 스크립트 1:1 | 마이그레이션 파일과 rollback 폴더 | 번호·이름이 1:1 | `server/src/test/kotlin/screenloop/MigrationTest.kt::everyMigrationHasARollbackScript` | integration |
+| SRV-032 | DB | 실제 되돌리기 | 최신 번호부터 되돌리기 스크립트 적용 후 재적용 | 테이블이 모두 사라지고 다시 올라감 | `server/src/test/kotlin/screenloop/MigrationTest.kt::rollbackScriptsUndoTheMigrationsAndTheyCanBeAppliedAgain` | integration |
+| SRV-033 | 기록 수집 | 시계 보정과 보류 | 시계 2시간 빠른 기기, 오프셋 0 기록, 길이 0·7시간 | 오프셋 더한 서버 시각 저장, 나머지 보류, 정산에서 제외 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::clockSkewedDeviceIsCorrectedAndImpossibleRecordsAreQuarantinedAndExcludedFromBilling` | integration |
+| SRV-034 | 정산 | 마감·조정·추적 | 1월 마감 후 늦은 기록 2건, 2월 마감 | 마감 정산서 불변, 조정 10,150원, 줄→일별→원본 기록 추적, 재반영 없음 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::monthCloseKeepsClosedInvoiceAndPutsLateRecordsIntoNextInvoiceAsAdjustmentWithTrace` | integration |
+| SRV-035 | 기록 수집 | 재전송 멱등 | 같은 배치 두 번 | 수락 5, 중복 5, ackSeq 5, DB 5건 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::resendingTheSameBatchDoesNotDuplicateRecords` | integration |
+| SRV-036 | 기록 수집 | 동시 중복 전송 | 같은 30건 배치를 6개 스레드로 | 수락 합 30, 중복 합 150, DB 30건 | `server/src/test/kotlin/screenloop/RecordsAndBillingIT.kt::simultaneousIdenticalUploadsStillStoreEachRecordOnce` | integration |
 
 ## 운영 웹 헬퍼(`apps/web`)
 
@@ -137,12 +162,14 @@
 | DEMO-002 | 데모 사이트 | 시계 틀리게 | TV +97초, PC −45초 | 판정 일치, 위치 차이 300ms 미만 | `web-demo/e2e/demo.spec.ts::기기 시계가 97초·45초 틀려도 재생 위치 차이가 작다` | e2e |
 | DEMO-003 | 데모 사이트 | 긴급 공지 | 공지 표시·해제 | 플레이어 두 대에 표시되고 해제하면 사라짐 | `web-demo/e2e/demo.spec.ts::긴급 공지가 플레이어를 덮고 해제하면 돌아온다` | e2e |
 | DEMO-004 | 데모 사이트 | 동시 조작 | 동시에 다음, 동시에 편성표 저장 | 적용됨과 거절(stale, conflict)이 함께 나옴 | `web-demo/e2e/demo.spec.ts::두 사람이 동시에 조작하면 한쪽은 거절된다` | e2e |
-| DEMO-005 | 데모 사이트 | 설명 따라가기 3~4장 | 3장에서 4장으로 이동 | "보관"과 "현재 상태를 다시 받음" 기록이 실제로 나오고 일치로 돌아옴 | `web-demo/e2e/demo.spec.ts::설명 따라가기 3~4장은 고장을 실제로 일으켜 보관·스냅샷 재요청 기록이 나온다` | e2e |
-| DEMO-006 | 데모 사이트 | 연결 끊기와 따라잡기 | TV 연결 끊기, 그 사이 일시정지, 다시 잇기 | 끊김 표시, 나머지 일치, 다시 이으면 현재 상태를 받아 따라잡음 | `web-demo/e2e/demo.spec.ts::연결을 끊으면 끊김으로 표시하며 계속 재생하고, 다시 이으면 따라잡는다` | e2e |
-| DEMO-007 | 데모 사이트 | 오프라인 기록 몰아 보내기 | 4배속, TV 끊기, 응답 유실 켜기, 다시 잇기 | 기록 적립 후 전송, 중복 걸러짐, 대기열 비움 | `web-demo/e2e/demo.spec.ts::오프라인 재생 뒤 기록 몰아 보내기: 응답이 유실돼도 중복은 걸러지고 기록은 빠짐없이 모인다` | e2e |
-| DEMO-008 | 데모 사이트 | 다음 항목 | 운영 웹에서 다음 | 네 대가 같은 항목으로 바뀜 | `web-demo/e2e/demo.spec.ts::운영 웹에서 다음 항목을 누르면 네 대가 같은 항목으로 바뀐다` | e2e |
-| DEMO-009 | 데모 사이트 | 이벤트 누락 | PC 이벤트 누락 후 연속 조작 | "현재 상태를 다시 받음" 기록, 일치로 돌아옴 | `web-demo/e2e/demo.spec.ts::이벤트 누락: 빠진 구간을 알아채고 스냅샷을 다시 받아 같은 상태로 돌아온다` | e2e |
-| DEMO-010 | 데모 사이트 | 순서 뒤바뀜·중복 | TV 뒤바뀜, PC 중복 후 연속 조작 | "보관", "이미 받아서 버림" 기록, 일치 | `web-demo/e2e/demo.spec.ts::이벤트 순서 뒤바뀜·중복: 기기가 보관·중복 버림을 하고 끝 상태는 같다` | e2e |
-| DEMO-011 | 데모 사이트 | 정산 패널 | 사례 선택, 줄 클릭 | Kotlin 결과(31,480원, 20,150원)와 근거(날짜·기록 번호) 표시 | `web-demo/e2e/demo.spec.ts::정산 패널: Kotlin 실행 결과 파일을 읽고, 줄을 누르면 근거(날짜·기록 번호)가 나온다` | e2e |
-| DEMO-012 | 데모 사이트 | 설명 따라가기 동작 | 첫 방문 | 자동 열림, 키보드, 접기·다시 열기, 쿠키 sl_tour(180일, Lax, /screenloop/) | `web-demo/e2e/demo.spec.ts::첫 방문이면 설명 따라가기가 자동으로 열리고 쿠키를 남기며, 키보드로 넘기고 접었다 다시 열 수 있다` | e2e |
-| DEMO-013 | 데모 사이트 | 첫 화면 | 첫 로드 | 제목·소개 문단·위쪽 안내 표시(기술 스택 이름 없음), 네 대 일치, 콘솔 오류 없음 | `web-demo/e2e/demo.spec.ts::첫 화면: 제목·문단·실행 범위 표시, 기기 네 대가 같은 상태이고 콘솔 오류가 없다` | e2e |
+| DEMO-005 | 데모 사이트 | 요금 실시간 계산과 조정 | ×10 속도로 기록이 쌓이게 두고 11월 마감, 마감 뒤에도 재생 | 기본료 2대분(19,800원) 이상이 잡히고, 마감 뒤 도착한 기록이 12월에 조정 줄로 나옴 | `web-demo/e2e/demo.spec.ts::방금 쌓인 재생 기록으로 요금이 실시간 계산되고, 11월 마감 뒤에 도착한 기록은 12월 정산서의 조정 줄이 된다` | e2e |
+| DEMO-006 | 데모 사이트 | 서버 코드가 Kotlin 산출물 | 벡터의 판정 사례와 정산 사례를 페이지 안의 서버 코드에 입력 | 벡터와 같은 이벤트·금액(31,480원, 20,150원), 운영 웹 조작이 서버 상태 번호를 올림 | `web-demo/e2e/demo.spec.ts::서버 쪽 판정과 요금 계산이 Kotlin 산출물에서 나온다: 공유 벡터와 같은 입력을 페이지의 서버 코드에 넣어 같은 값을 얻는다` | e2e |
+| DEMO-007 | 데모 사이트 | 설명 따라가기 3~4장 | 3장에서 4장으로 이동 | "보관"과 "현재 상태를 다시 받음" 기록이 실제로 나오고 일치로 돌아옴 | `web-demo/e2e/demo.spec.ts::설명 따라가기 3~4장은 고장을 실제로 일으켜 보관·스냅샷 재요청 기록이 나온다` | e2e |
+| DEMO-008 | 데모 사이트 | 연결 끊기와 따라잡기 | TV 연결 끊기, 그 사이 일시정지, 다시 잇기 | 끊김 표시, 나머지 일치, 다시 이으면 현재 상태를 받아 따라잡음 | `web-demo/e2e/demo.spec.ts::연결을 끊으면 끊김으로 표시하며 계속 재생하고, 다시 이으면 따라잡는다` | e2e |
+| DEMO-009 | 데모 사이트 | 오프라인 기록 몰아 보내기 | 4배속, TV 끊기, 응답 유실 켜기, 다시 잇기 | 기록 적립 후 전송, 중복 걸러짐, 대기열 비움 | `web-demo/e2e/demo.spec.ts::오프라인 재생 뒤 기록 몰아 보내기: 응답이 유실돼도 중복은 걸러지고 기록은 빠짐없이 모인다` | e2e |
+| DEMO-010 | 데모 사이트 | 다음 항목 | 운영 웹에서 다음 | 네 대가 같은 항목으로 바뀜 | `web-demo/e2e/demo.spec.ts::운영 웹에서 다음 항목을 누르면 네 대가 같은 항목으로 바뀐다` | e2e |
+| DEMO-011 | 데모 사이트 | 이벤트 누락 | PC 이벤트 누락 후 연속 조작 | "현재 상태를 다시 받음" 기록, 일치로 돌아옴 | `web-demo/e2e/demo.spec.ts::이벤트 누락: 빠진 구간을 알아채고 스냅샷을 다시 받아 같은 상태로 돌아온다` | e2e |
+| DEMO-012 | 데모 사이트 | 순서 뒤바뀜·중복 | TV 뒤바뀜, PC 중복 후 연속 조작 | "보관", "이미 받아서 버림" 기록, 일치 | `web-demo/e2e/demo.spec.ts::이벤트 순서 뒤바뀜·중복: 기기가 보관·중복 버림을 하고 끝 상태는 같다` | e2e |
+| DEMO-013 | 데모 사이트 | 정산 패널 | 사례 선택, 줄 클릭 | Kotlin 결과(31,480원, 20,150원)와 근거(날짜·기록 번호) 표시 | `web-demo/e2e/demo.spec.ts::정산 패널: Kotlin 실행 결과 파일을 읽고, 줄을 누르면 근거(날짜·기록 번호)가 나온다` | e2e |
+| DEMO-014 | 데모 사이트 | 설명 따라가기 동작 | 첫 방문 | 자동 열림, 키보드, 접기·다시 열기, 쿠키 sl_tour(180일, Lax, /screenloop/) | `web-demo/e2e/demo.spec.ts::첫 방문이면 설명 따라가기가 자동으로 열리고 쿠키를 남기며, 키보드로 넘기고 접었다 다시 열 수 있다` | e2e |
+| DEMO-015 | 데모 사이트 | 첫 화면 | 첫 로드 | 제목·소개 문단·위쪽 안내 표시(기술 스택 이름 없음), 네 대 일치, 콘솔 오류 없음 | `web-demo/e2e/demo.spec.ts::첫 화면: 제목·문단·실행 범위 표시, 기기 네 대가 같은 상태이고 콘솔 오류가 없다` | e2e |

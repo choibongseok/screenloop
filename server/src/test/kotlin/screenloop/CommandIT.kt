@@ -25,10 +25,11 @@ class CommandIT : IntegrationBase() {
         val s = snapshot("d-001")
         assertTrue(s["version"].asLong() >= 1)
         assertTrue(s["scheduleVersion"].asInt() >= 1)
-        assertEquals(3, s["schedule"]["items"].size())
+        assertTrue(s["schedule"]["items"].size() >= 1)
         val first = call("GET", "/api/devices/d-001/events?after=0", operator).body!!
         assertEquals("schedule.replaced", first[0]["type"].asText())
         assertEquals(1, first[0]["version"].asInt())
+        assertEquals(3, first[0]["schedule"]["items"].size(), "처음 편성표는 항목 3개")
     }
 
     @Test

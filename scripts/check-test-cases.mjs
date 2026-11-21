@@ -26,13 +26,17 @@ function walk(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
 }
 const classFile = new Map();
-for (const f of walk('server/src/test/kotlin').filter((x) => x.endsWith('.kt')))
-  for (const m of readFileSync(f, 'utf8').matchAll(/^(?:abstract )?class (\w+)/gm)) classFile.set(m[1], f);
-const kdir = '.test-results/kotlin';
-if (!existsSync(kdir)) problems.push(`${kdir} 가 없음`);
-else
-  for (const f of readdirSync(kdir).filter((x) => x.endsWith('.xml'))) {
-    const text = readFileSync(`${kdir}/${f}`, 'utf8');
+for (const root of ['server/src/test/kotlin', 'domain/src/jvmTest/kotlin', 'domain/src/commonTest/kotlin']) {
+  for (const f of walk(root).filter((x) => x.endsWith('.kt'))) for (const m of readFileSync(f, 'utf8').matchAll(/^(?:abstract )?class (\w+)/gm)) classFile.set(m[1], f);
+}
+function junit(dir) {
+  const r = new Map();
+  if (!existsSync(dir)) {
+    problems.push(`${dir} 가 없음`);
+    return r;
+  }
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.xml'))) {
+    const text = readFileSync(`${dir}/${f}`, 'utf8');
     for (const m of text.matchAll(/<testcase name="([^"]+)" classname="([^"]+)" time="[^"]+"(\/>|>([\s\S]*?)<\/testcase>)/g)) {
       const cls = m[2].split('.').pop();
       const file = classFile.get(cls);
@@ -40,9 +44,21 @@ else
         problems.push(`${m[2]}: 소스에서 클래스를 찾지 못함`);
         continue;
       }
-      actual.set(`${file}::${m[1].replace(/\(\)$/, '')}`, /<failure|<error/.test(m[4] ?? '') ? 'failed' : /<skipped/.test(m[4] ?? '') ? 'skipped' : 'passed');
+      const name = m[1].replace(/\[[^\]]*\]$/, '').replace(/\(\)$/, '');
+      r.set(`${file}::${name}`, /<failure|<error/.test(m[4] ?? '') ? 'failed' : /<skipped/.test(m[4] ?? '') ? 'skipped' : 'passed');
     }
   }
+  return r;
+}
+for (const [k, v] of junit('.test-results/kotlin')) actual.set(k, v);
+// 도메인 모듈: JVM 시험은 그대로 한 건, 공통(commonTest) 시험은 JVM 과 JS 에서 같은 이름으로 모두 통과해야 한 건으로 센다
+const domJvm = junit('.test-results/domain-jvm');
+const domJs = junit('.test-results/domain-js');
+for (const [k, v] of domJvm) actual.set(k, v);
+for (const [k, v] of domJs) {
+  if (domJvm.get(k) !== v) problems.push(`공통 시험이 JS 에서 다르게 끝남: ${k} jvm=${domJvm.get(k)} js=${v}`);
+}
+for (const k of domJvm.keys()) if (k.includes('/commonTest/') && !domJs.has(k)) problems.push(`공통 시험이 JS 에서 실행되지 않음: ${k}`);
 
 // Playwright json
 function playwright(file, prefix) {

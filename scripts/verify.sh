@@ -19,16 +19,22 @@ npx eslint .
 echo "eslint 통과"
 for d in packages/sync-core apps/web apps/player web-demo; do (cd "$d" && npx tsc --noEmit)
   echo "tsc 통과: $d"; done
-bash scripts/gradle.sh :server:compileKotlin :server:compileTestKotlin -q
+bash scripts/gradle.sh :domain:compileKotlinJvm :domain:compileKotlinJs :server:compileKotlin :server:compileTestKotlin -q
 echo "kotlin 컴파일 통과"
 
 step "2. 명세와 생성물(이벤트 스키마·TS 타입) 일치"
 node scripts/spec-export.mjs --check
 
-step "3. 단위 테스트 (TypeScript, Kotlin 도메인: 같은 벡터)"
+step "3. 단위 테스트 (TypeScript, Kotlin 도메인 JVM·JS: 같은 벡터)"
+bash scripts/build-domain-js.sh
 npx vitest run --root packages/sync-core 2>&1 | grep -E 'Tests|Test Files|FAIL|×' ; test "${PIPESTATUS[0]}" -eq 0
 npx vitest run --root apps/web 2>&1 | grep -E 'Tests|Test Files|FAIL|×' ; test "${PIPESTATUS[0]}" -eq 0
-kt --tests '*VectorsTest' --tests '*BillingEvidenceTest'
+# 서버 도메인(Kotlin Multiplatform): JVM 시험과, 같은 코드를 JS 로 컴파일해 Node 에서 돌리는 공통 시험
+bash scripts/gradle.sh :domain:jvmTest :domain:jsNodeTest --console=plain 2>&1 | grep -E 'PASSED|FAILED|BUILD' | awk '{c[$NF]++} /BUILD|FAILED/ {print} END {printf "통과 %d, 실패 %d (도메인 JVM·JS)\n", c["PASSED"], c["FAILED"]}'
+test "${PIPESTATUS[0]}" -eq 0
+mkdir -p .test-results/domain-jvm .test-results/domain-js
+cp domain/build/test-results/jvmTest/*.xml .test-results/domain-jvm/
+cp domain/build/test-results/jsNodeTest/*.xml .test-results/domain-js/
 
 step "4. 계약 테스트 (서버 응답 ↔ OpenAPI)"
 kt --tests '*ContractIT'

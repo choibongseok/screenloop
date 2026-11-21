@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DeviceAuthority, DeviceClient, type Command, type CommandResult, type StateEvent, type Transport } from '../src/index';
+import { DeviceClient, type Command, type CommandResult, type StateEvent, type Transport } from '../src/index';
+import { DeviceAuthority } from './fakeServer';
 
 const T0 = Date.UTC(2026, 10, 21, 0, 0, 0);
 const items = [

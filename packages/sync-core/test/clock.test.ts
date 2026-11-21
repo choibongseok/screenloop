@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ClockSync, DeviceAuthority, nowPlaying } from '../src/index';
+import { ClockSync, nowPlaying } from '../src/index';
+import { DeviceAuthority } from './fakeServer';
 
 describe('기기 시계 차이 보정', () => {
   it('왕복이 대칭이면 오프셋 오차가 1ms 이내다 (기기 시계가 37초 빠른 경우)', () => {

@@ -1,4 +1,4 @@
-import { nowPlaying, type Command } from '@screenloop/sync-core';
+import type { Command } from '@screenloop/sync-core';
 import { sceneDataUri } from '@screenloop/scenes';
 import { $, el, hms, setAttr, setText } from './dom';
 import { KIND_LABEL, RECV_LABEL, World, type DeviceKind, type LogLine, type RecvMode, type SimDevice } from './sim';
@@ -53,7 +53,6 @@ export function buildDevices(ui: Ui): () => void {
         return x;
       };
       const ctl = el('div', { class: 'ctl' });
-      const cur = () => nowPlaying(dev.client.view!, dev.client.serverNow());
       ctl.append(
         btn('다음 항목', 'next', () => {
           const np = dev.client.nowPlaying();
@@ -68,7 +67,6 @@ export function buildDevices(ui: Ui): () => void {
         btn('음량 −', 'vol-down', () => void ui.run(kind, { type: 'volume.set', volume: Math.max(0, (dev.client.view?.volume ?? 50) - 10) }, '음량 −')),
         btn('음량 +', 'vol-up', () => void ui.run(kind, { type: 'volume.set', volume: Math.min(100, (dev.client.view?.volume ?? 50) + 10) }, '음량 +')),
       );
-      void cur;
       if (kind === 'web') {
         ctl.append(
           btn('긴급 공지', 'notice', () => void ui.run(kind, { type: 'override.set', text: '점심시간 안내: 11:30~13:00', durationSec: 20 }, '긴급 공지 20초')),
@@ -159,8 +157,8 @@ const circ = (a: number, b: number, len: number) => {
 /** 서버의 지금 상태와 기기 네 대를 같은 시각에 견준다 */
 export function compare(world: World, since: Map<string, number>): { rows: Row[]; serverVersion: number; maxDiff: number } {
   const t = world.clock.now();
-  const S = world.server.auth.state;
-  const sNp = nowPlaying(S, t);
+  const S = world.server.state(); // 서버(Kotlin)의 지금 상태
+  const sNp = world.server.nowPlaying(t);
   const sNotice = S.override && (S.override.untilMs === null || t < S.override.untilMs) ? S.override.text : '';
   let maxDiff = 0;
   const rows = world.devices.map((dev): Row => {
@@ -172,7 +170,7 @@ export function compare(world: World, since: Map<string, number>): { rows: Row[]
     const notice = conf?.override && c.overrideActive() ? conf.override.text : '';
     const reasons: string[] = [];
     if (!conf || conf.version !== S.version) reasons.push(`상태 번호 ${conf?.version ?? '–'} (서버 ${S.version})`);
-    if ((np?.item.id ?? '') !== (sNp?.item.id ?? '')) reasons.push('재생 항목이 다름');
+    if ((np?.item.id ?? '') !== (sNp?.itemId ?? '')) reasons.push('재생 항목이 다름');
     if (conf && conf.playback.paused !== S.playback.paused) reasons.push('일시정지 상태가 다름');
     if (conf && conf.volume !== S.volume) reasons.push('음량이 다름');
     if (notice !== sNotice) reasons.push('공지가 다름');
@@ -291,7 +289,7 @@ export function renderLogs(world: World, cmdLog: LogLine[]): void {
 
 export function renderRecords(world: World): void {
   const players = world.devices.filter((d) => d.engine);
-  const rows = world.server.ledger.rows;
+  const rows = world.server.records();
   const acc = rows.filter((r) => r.status === 'accepted').length;
   const quar = rows.length - acc;
   const stats = $('#rec-stats');
@@ -304,7 +302,7 @@ export function renderRecords(world: World): void {
     );
   }
   setText($('.v', stats.children[0] as HTMLElement), String(acc));
-  setText($('.v', stats.children[1] as HTMLElement), String(world.server.duplicatesFiltered));
+  setText($('.v', stats.children[1] as HTMLElement), String(world.server.duplicatesFiltered()));
   setText($('.v', stats.children[2] as HTMLElement), String(quar));
   const tbody = $('#rec-table tbody');
   if (tbody.children.length !== players.length) tbody.replaceChildren(...players.map(() => el('tr', {}, ...Array.from({ length: 6 }, () => el('td')))));

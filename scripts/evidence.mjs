@@ -6,8 +6,7 @@ const vitest = (f) => {
   const r = JSON.parse(readFileSync(f, 'utf8'));
   return { passed: r.numPassedTests, failed: r.numFailedTests };
 };
-const junit = (re) => {
-  const dir = '.test-results/kotlin';
+const junit = (re, dir = '.test-results/kotlin') => {
   let passed = 0,
     failed = 0;
   if (!existsSync(dir)) return { passed, failed };
@@ -34,7 +33,11 @@ const rows = [
     ...vitest('.test-results/sync-core.json'),
   },
   { kind: '단위', label: '운영 웹의 입력 검사와 안내 문구', ...vitest('.test-results/web.json') },
-  { kind: '단위', label: '서버 규칙(Kotlin): 같은 시험 값으로 판정, 기록 기준, 요금 계산', ...junit(/VectorsTest|BillingEvidence/) },
+  {
+    kind: '단위',
+    label: '서버 규칙(Kotlin): 같은 시험 값으로 판정, 기록 기준, 요금 계산. 같은 코드를 JS 로 컴파일한 것도 sync-core 시험에서 통과',
+    ...junit(/./, '.test-results/domain-jvm'),
+  },
   { kind: '계약', label: '서버 응답이 API 설계 문서와 같은지(모든 API 호출, 오류 응답 포함)', ...junit(/ContractIT/) },
   { kind: '통합', label: '실제 PostgreSQL·Redis: 조작 순서, 실시간 알림, 중복 기록 거르기, 월 마감, DB 변경 되돌리기', ...junit(/CommandIT|RecordsAndBillingIT|MigrationTest/) },
   { kind: 'e2e', label: '서버·웹·플레이어를 실제로 띄워 브라우저로 조작: 플레이어 두 대, 끊김, 요금, 배포 되돌리기', ...pw('.test-results/e2e.json') },

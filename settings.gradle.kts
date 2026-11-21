@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "screenloop"
-include("server")
+include("domain", "server")

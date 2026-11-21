@@ -1,6 +1,6 @@
 import { nowPlaying, playableItems, startOfIndex } from './playback';
-import { initialState, normalizeItem, reduce } from './reducer';
-import type { Command, CommandResult, DeviceState, RejectReason, ScheduleItem, StateEvent } from './types';
+import { normalizeItem } from './reducer';
+import type { Command, DeviceState, RejectReason, ScheduleItem, StateEvent } from './types';
 
 const SCENES = ['aurora', 'waves', 'grid', 'pulse', 'dusk'];
 
@@ -30,7 +30,7 @@ export function validItems(items: ScheduleItem[]): boolean {
 const reject = (reason: RejectReason): Decision => ({ result: 'rejected', reason });
 
 /**
- * 명령 한 건을 지금 상태에서 판정한다(순수 함수). 충돌 규칙:
+ * 명령 한 건을 지금 상태에서 판정한다(순수 함수). 클라이언트가 서버 답을 기다리지 않고 먼저 보여 줄 때(낙관적 갱신) 쓰는 사본이다. 서버의 판정은 Kotlin 도메인 모듈이 하고, 같은 시험 벡터로 두 구현이 같은 결과를 내는지 확인한다. 충돌 규칙:
  *  - 서버가 도착 순서로 한 줄로 세운다. 이벤트 버전이 곧 그 순서다.
  *  - 절대값 명령(일시정지·재개·이동·음량·긴급 공지)은 나중에 도착한 쪽이 이긴다. 이미 같은 상태면 unchanged 로 거절하고 버전을 올리지 않는다.
  *  - 상대 명령(다음)은 조작자가 본 항목(fromItemId)이 아직 재생 중일 때만 받는다. 그 사이 다른 사람이 넘겼으면 stale.
@@ -88,37 +88,5 @@ export function decide(state: DeviceState, cmd: Command, nowMs: number): Decisio
       if (state.override === null) return reject('unchanged');
       return { result: 'accepted', event: { type: 'override.cleared' } };
     }
-  }
-}
-
-/** 한 화면의 서버 쪽 기록 장치: 이벤트 로그, 현재 상태, commandId 중복 방지. 데모 사이트의 가짜 서버와 테스트가 쓴다. */
-export class DeviceAuthority {
-  state: DeviceState;
-  readonly log: StateEvent[] = [];
-  private readonly seen = new Map<string, CommandResult>();
-
-  constructor(deviceId: string, state?: DeviceState) {
-    this.state = state ?? initialState(deviceId);
-  }
-
-  submit(cmd: Command, nowMs: number, actor: string): CommandResult {
-    const prev = this.seen.get(cmd.commandId);
-    if (prev) return { ...prev, replayed: true };
-    const d = decide(this.state, cmd, nowMs);
-    let out: CommandResult;
-    if (d.result === 'accepted') {
-      const event = { ...d.event, deviceId: this.state.deviceId, version: this.state.version + 1, serverTimeMs: nowMs, actor } as StateEvent;
-      this.state = reduce(this.state, event);
-      this.log.push(event);
-      out = { result: 'accepted', version: this.state.version, replayed: false, event };
-    } else {
-      out = { result: 'rejected', reason: d.reason, version: this.state.version, replayed: false };
-    }
-    this.seen.set(cmd.commandId, out);
-    return out;
-  }
-
-  eventsAfter(version: number): StateEvent[] {
-    return this.log.filter((e) => e.version > version);
   }
 }

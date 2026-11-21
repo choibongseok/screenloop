@@ -14,6 +14,7 @@ import screenloop.auth.Forbidden
 import screenloop.auth.Tokens
 import screenloop.auth.UserPrincipal
 import screenloop.store.*
+import kotlinx.serialization.json.Json
 import screenloop.sync.*
 import java.time.Clock
 
@@ -31,6 +32,9 @@ data class DeviceOutcome(val deviceId: String, val outcome: CommandResultDto)
 data class GroupResult(val groupId: String, val results: List<DeviceOutcome>)
 data class CloseReq(val accountId: String?, val month: String?)
 data class VersionDto(val version: String)
+
+/** HTTP 로 받은 JSON 을 도메인 명령으로 바꾼다(파싱 규칙은 도메인 모듈의 CommandParser) */
+private fun parseCommand(node: JsonNode): Command? = CommandParser.parse(Json.parseToJsonElement(node.toString()))
 
 @RestController
 @RequestMapping("/api")
@@ -102,7 +106,7 @@ class Api(
     fun command(@PathVariable id: String, @RequestBody body: JsonNode, req: HttpServletRequest): ResponseEntity<Any> {
         val user = Access.requireOperator(req)
         if (repo.device(id) == null) return ResponseEntity.status(404).body(ErrorDto("not_found", "없는 화면입니다"))
-        val cmd = CommandParser.parse(body) ?: return ResponseEntity.badRequest().body(ErrorDto("bad_request", "commandId 와 알려진 type 이 필요합니다"))
+        val cmd = parseCommand(body) ?: return ResponseEntity.badRequest().body(ErrorDto("bad_request", "commandId 와 알려진 type 이 필요합니다"))
         return ResponseEntity.ok(commands.submit(id, cmd, user.username))
     }
 
@@ -116,11 +120,11 @@ class Api(
     fun groupCommand(@PathVariable gid: String, @RequestBody body: JsonNode, req: HttpServletRequest): ResponseEntity<Any> {
         val user = Access.requireOperator(req)
         val g = repo.group(gid) ?: return ResponseEntity.status(404).body(ErrorDto("not_found", "없는 묶음입니다"))
-        val base = CommandParser.parse(body) ?: return ResponseEntity.badRequest().body(ErrorDto("bad_request", "commandId 와 알려진 type 이 필요합니다"))
+        val base = parseCommand(body) ?: return ResponseEntity.badRequest().body(ErrorDto("bad_request", "commandId 와 알려진 type 이 필요합니다"))
         // 화면마다 따로 판정한다. commandId 는 화면마다 달라야 하므로 뒤에 화면 ID 를 붙인다.
         val results = g.deviceIds.map { d ->
             val node = (body.deepCopy<JsonNode>() as com.fasterxml.jackson.databind.node.ObjectNode).put("commandId", "${base.commandId}@$d")
-            DeviceOutcome(d, commands.submit(d, CommandParser.parse(node)!!, user.username))
+            DeviceOutcome(d, commands.submit(d, parseCommand(node)!!, user.username))
         }
         return ResponseEntity.ok(GroupResult(gid, results))
     }
