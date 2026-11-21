@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: screenloop-server
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:59632/screenloop}
+    username: ${SPRING_DATASOURCE_USERNAME:screenloop}
+    password: ${SPRING_DATASOURCE_PASSWORD:screenloop}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:59679}
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: always
+server:
+  port: 8080
+  shutdown: graceful
+management:
+  endpoints.web.exposure.include: health
+  endpoint.health.probes.enabled: true
+screenloop:
+  version: ${SCREENLOOP_VERSION:dev}
+  token-secret: ${SCREENLOOP_TOKEN_SECRET:demo-only-secret-change-me}
+  # 데모용 고정 계정(역할 2개). 실제 서비스라면 계정 저장소와 비밀번호 해시를 쓴다.
+  users:
+    operator:
+      password: ${SCREENLOOP_OPERATOR_PASSWORD:operator-demo}
+      role: operator
+    viewer:
+      password: ${SCREENLOOP_VIEWER_PASSWORD:viewer-demo}
+      role: viewer
